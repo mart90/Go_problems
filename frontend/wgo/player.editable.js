@@ -98,7 +98,7 @@ WGo.Player.Editable.prototype.play = function(x,y) {
 	var makeAttemptCall = $.ajax({ 
 		type: "POST",
 		contentType: "application/json",
-		url: WGo.server_address + "backend/make_attempt",
+		url: server_address + "backend/make_attempt",
 		beforeSend: function (xhr) {
 			xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
 		},

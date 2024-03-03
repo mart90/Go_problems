@@ -232,12 +232,12 @@ Player.prototype = {
 	initGame: function() {
 		var token = localStorage.getItem('token');
 		if (!token || token == "undefined") {
-			window.location.href = WGo.server_address + "login.html";
+			window.location.href = server_address + "login.html";
 		}
 		else {
 			var ratingCall = $.ajax({
 				type: "GET",
-				url: WGo.server_address + "backend/get_current_rating",
+				url: server_address + "backend/get_current_rating",
 				beforeSend: function (xhr) {
 					xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
 				}
@@ -278,7 +278,7 @@ Player.prototype = {
 	refreshToken: function(callback) {
 		var refreshCall = $.ajax({
 			type: "GET",
-			url: WGo.server_address + "backend/refresh_token",
+			url: server_address + "backend/refresh_token",
 			beforeSend: function (xhr) {
 				xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
 			}
@@ -303,7 +303,7 @@ Player.prototype = {
 
 		var newProblemCall = $.ajax({ 
 			type: "GET", 
-			url: WGo.server_address + "backend/get_new_problem",
+			url: server_address + "backend/get_new_problem",
 			beforeSend: function (xhr) {
 				xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
 			}

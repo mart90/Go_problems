@@ -53,9 +53,6 @@ var WGo = {
 	}
 }
 
-//WGo.server_address = "http://85.146.99.136:80/";
-WGo.server_address = "http://localhost:5000/";
-
 // browser detection - can be handy
 WGo.opera = navigator.userAgent.search(/(opera)(?:.*version)?[ \/]([\w.]+)/i) != -1;
 WGo.webkit = navigator.userAgent.search(/(webkit)[ \/]([\w.]+)/i) != -1;

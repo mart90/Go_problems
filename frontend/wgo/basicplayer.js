@@ -385,30 +385,11 @@ BasicPlayer.layouts = {
 BasicPlayer.dynamicLayout = [
 	{
 		conditions: {
-			minWidth: 650,
+			minWidth: 0,
 		},
 		layout: BasicPlayer.layouts["right_top"], 
 		className: "wgo-twocols wgo-large",
-	},
-	{
-		conditions: {
-			minWidth: 550,
-			minHeight: 600,
-		},
-		layout: BasicPlayer.layouts["one_column"],
-		className: "wgo-medium"
-	},
-	{
-		conditions: {
-			minWidth: 350,
-		},
-		layout: BasicPlayer.layouts["no_comment"],
-		className: "wgo-small"
-	},
-	{	// if conditions object is omitted, layout is applied 
-		layout: BasicPlayer.layouts["no_comment"],
-		className: "wgo-xsmall",
-	},
+	}
 ];
 
 // default settings, they are merged with user settings in constructor.

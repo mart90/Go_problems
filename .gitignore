@@ -1,3 +1,5 @@
 config.py
 .idea
 __pycache__
+frontend/wgo/serverAddress.js
+todo.txt

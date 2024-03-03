@@ -196,7 +196,7 @@ def make_attempt(current_user):
     current_user.rating = calculate_new_rating(old_rating, problem_old_rating, success, current_user.kfactor)
     problem.rating = calculate_new_rating(problem_old_rating, old_rating, not success, problem.kfactor)
 
-    if current_user.kfactor > 16:
+    if current_user.kfactor > 24:
         current_user.kfactor -= 1
     if problem.kfactor > 4:
         problem.kfactor -= 1

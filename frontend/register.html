@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<title>Full board Go problems - Login</title>	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-	<script type="text/javascript" src="wgo/wgo.js"></script>
+	<script type="text/javascript" src="wgo/serverAddress.js"></script>
 
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap">
 	<link rel="stylesheet" type="text/css" href="css/register.css" />
@@ -45,7 +45,7 @@
 
 		var registerCall = $.ajax({
 			type: "POST",
-			url: WGo.server_address + "backend/register",
+			url: server_address + "backend/register",
 			contentType: "application/json",
 			data: JSON.stringify({
 				username: username,
@@ -58,7 +58,7 @@
 		registerCall.done(function (result) {
 			var loginCall = $.ajax({
 				type: "POST",
-				url: WGo.server_address + "backend/login",
+				url: server_address + "backend/login",
 				beforeSend: function (xhr) {
 					xhr.setRequestHeader('Authorization', 'Basic ' + btoa(username + ":" + password));
 				}
@@ -66,7 +66,7 @@
 		
 			loginCall.done(function (loginResult) {
 				localStorage.setItem('token', loginResult.token)
-				window.location.href = WGo.server_address + "player.html";
+				window.location.href = server_address + "player.html";
 			});
 		});
 
