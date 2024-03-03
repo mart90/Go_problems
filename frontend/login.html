@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+<html>
+<head>	
+	<meta charset="utf-8">
+	<title>Full board Go problems - Login</title>	
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	<script type="text/javascript" src="wgo/wgo.js"></script>
+
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap">
+	<link rel="stylesheet" type="text/css" href="css/login.css" />
+</head>
+
+<body>
+	<div class="form">
+		<h3>Login</h3>
+
+		<input class="input" type="text" placeholder="Username" id="username" name="username">
+		<br><br>
+		<input class="input" type="password" placeholder="Password" id="password" name="password" onkeydown="handleEnter(event)">
+		<br><br>
+		<input class="button button-login" type="submit" value="Login" onclick="login()">
+		<input class="button button-register" type="submit" value="Register" onclick="window.location.href = WGo.server_address + 'register.html'">
+		<h4 id="invalid_credentials" style="display:none">Invalid credentials</h4>
+	</div>
+</body>
+</html>
+
+<script>
+	function handleEnter(e) {
+		if (e.keyCode === 13){
+			login();
+		}
+	}
+
+	function login() {
+		var username = document.getElementById('username').value;
+		var password = document.getElementById('password').value;
+
+		var loginCall = $.ajax({
+			type: "POST",
+			url: WGo.server_address + "backend/login",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader('Authorization', 'Basic ' + btoa(username + ":" + password));
+			}
+		});
+	
+		loginCall.done(function (result) {
+			localStorage.setItem('token', result.token)
+			localStorage.setItem('token_expires_at', result.expires_at)
+			window.location.href = WGo.server_address + "player.html";
+		});
+
+		loginCall.fail(function (result) {
+			document.getElementById('invalid_credentials').style.display = "";
+		});
+	}
+</script>

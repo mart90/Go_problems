@@ -1,0 +1,77 @@
+<!DOCTYPE HTML>
+<html>
+<head>	
+	<meta charset="utf-8">
+	<title>Full board Go problems - Login</title>	
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	<script type="text/javascript" src="wgo/wgo.js"></script>
+
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap">
+	<link rel="stylesheet" type="text/css" href="css/register.css" />
+</head>
+
+<body>
+	<div class="form">
+		<h3>Register</h3>
+		<input class="input" type="text" placeholder="Username" id="username" name="username">
+		<br><br>
+		<input class="input" type="password" placeholder="Password" id="password" name="password">
+		<br><br>
+		<input class="input" type="text" placeholder="E-mail" id="email" name="email">
+		<br><br>
+		<label for="rank">Approximate Go rank</label>
+		<select class="input select" name="rank" id="rank">
+			<option value="1000">20k+</option>
+			<option value="1100">15k-19k</option>
+			<option value="1200">10k-14k</option>
+			<option value="1400">5k-9k</option>
+			<option value="1600">1k-4k</option>
+			<option value="1800">1d-4d</option>
+			<option value="2000">5d+</option>
+		</select>
+		<br><br>
+		<input class="button" type="submit" value="Register" onclick="register()">
+		<h4 id="bad_request" style="display:none">Register failed. Maybe the username or e-mail already exists.</h4>
+	</div>
+</body>
+</html>
+
+<script>
+	function register() {
+		var username = document.getElementById('username').value;
+		var password = document.getElementById('password').value;
+		var email = document.getElementById('email').value;
+		var rank = document.getElementById('rank').value;
+
+		var registerCall = $.ajax({
+			type: "POST",
+			url: WGo.server_address + "backend/register",
+			contentType: "application/json",
+			data: JSON.stringify({
+				username: username,
+				password: password,
+				email: email,
+				rating: rank
+			})
+		});
+	
+		registerCall.done(function (result) {
+			var loginCall = $.ajax({
+				type: "POST",
+				url: WGo.server_address + "backend/login",
+				beforeSend: function (xhr) {
+					xhr.setRequestHeader('Authorization', 'Basic ' + btoa(username + ":" + password));
+				}
+			});
+		
+			loginCall.done(function (loginResult) {
+				localStorage.setItem('token', loginResult.token)
+				window.location.href = WGo.server_address + "player.html";
+			});
+		});
+
+		registerCall.fail(function (result) {
+			document.getElementById('bad_request').style.display = "";
+		});
+	}
+</script>

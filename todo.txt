@@ -1,0 +1,21 @@
+Show move played when wrong
+About informational (in menu dropdown?)
+Test green moves
+Test if pro move gets numbers (id 4174)
+BUG: Arrow keys to last move doesn't enable editable
+Check AI assessment 3515
+BUG: Next problem button enabled @ start
+Play move on screen when pro more or alternative AI move is played
+Player mobile-friendly
+Force clients to reload files after deployment
+
+HTTPS & domain
+Monetization?
+
+--------RELEASE--------
+
+Anti-misclick on mobile
+Redesign board theme
+Rating & commenting on problems
+Problem filter settings
+Saving variations with comments
