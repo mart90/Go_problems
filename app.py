@@ -107,16 +107,12 @@ def get_new_problem(current_user):
         select p.id, p.game_id, p.rating, p.kfactor, p.move_number, count(*) as attempts
         from problem p
         left join problem_attempt pa on p.id = pa.problem_id
-        where 
-            pa.user_id = %s
-            and p.flag = 2
+        where pa.user_id = %s
         group by p.id
         union
         select p.id, p.game_id, p.rating, p.kfactor, p.move_number, 0 as attempts
         from problem p
-        where 
-            p.flag = 2
-            and %s not in (select user_id from problem_attempt pa where p.id = pa.problem_id)""", (current_user.id, current_user.id))
+        where %s not in (select user_id from problem_attempt pa where p.id = pa.problem_id)""", (current_user.id, current_user.id))
 
     result = mysql.cursor.fetchall()
 
