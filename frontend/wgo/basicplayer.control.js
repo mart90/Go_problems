@@ -355,21 +355,38 @@ var player_menu = function(player) {
 /**
  * List of widgets (probably MenuItem objects) to be displayed in drop-down menu.
  */
- 
+
 Control.menu = [{
-	constructor: control.MenuItem,
-	args: {
-		name: "switch-coo",
-		togglable: true,
-		click: function(player) {
-			player.setCoordinates(!player.coordinates);
-			return player.coordinates;
-		},
-		init: function(player) {
-			if(player.coordinates) this.select();
+		constructor: control.MenuItem,
+		args: {
+			name: "switch-coo",
+			togglable: true,
+			click: function(player) {
+				player.setCoordinates(!player.coordinates);
+				return player.coordinates;
+			},
+			init: function(player) {
+				if(player.coordinates) this.select();
+			}
+		}
+	}, {
+		constructor: control.MenuItem,
+		args: {
+			name: "About",
+			click: function() {		
+				window.open(server_address + "about.html").focus();
+			}
+		}
+	}, {
+		constructor: control.MenuItem,
+		args: {
+			name: "Discord",
+			click: function() {		
+				window.open("https://discord.gg/6TvCYUdt9y").focus();
+			}
 		}
 	}
-}];
+];
 
 /**
  * List of widgets (probably Button objects) to be displayed.
@@ -496,9 +513,7 @@ Control.widgets = [ {
 				},
 				click: function(player) {
 					player.next();
-					if (player.kifuReader.path.m == player.kifuReader.kifu.nodeCount){
-						player.ignore_attempts = false;
-					}
+					player.enableAttemptsMaybe();
 				},
 			}
 		}, {
@@ -516,9 +531,7 @@ Control.widgets = [ {
 					var p = WGo.clone(player.kifuReader.path);
 					p.m += 10; 
 					player.goTo(p);					
-					if (player.kifuReader.path.m == player.kifuReader.kifu.nodeCount){
-						player.ignore_attempts = false;
-					}
+					player.enableAttemptsMaybe();
 				},
 			}
 		}, {
@@ -533,7 +546,7 @@ Control.widgets = [ {
 				},
 				click: function(player) {
 					player.last();
-					player.ignore_attempts = false;
+					player.enableAttemptsMaybe();
 				},
 			}
 		}]

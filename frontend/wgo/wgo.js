@@ -311,8 +311,8 @@ var shadow_handler_realistic = {
 }
 
 var get_markup_color = function(board, x, y) {
-	if(board.obj_arr[x][y][0].c == WGo.B) return theme_variable("markupBlackColor", board);
-	else if(board.obj_arr[x][y][0].c == WGo.W) return theme_variable("markupWhiteColor", board);
+	if(board.obj_arr[x][y][0].c == WGo.B) return "white";
+	else if(board.obj_arr[x][y][0].c == WGo.W) return "black";
 	return theme_variable("markupNoneColor", board);
 }
 
@@ -749,7 +749,7 @@ Board.drawHandlers = {
 				var radius = user_played_here ? sr - 1 : sr/2;
 
 				this.strokeStyle = args.c || get_markup_color(board, args.x, args.y);
-				this.lineWidth = user_played_here ? 2 : args.lineWidth || theme_variable("markupLinesWidth", board) || 1;
+				this.lineWidth = user_played_here ? 3 : args.lineWidth || theme_variable("markupLinesWidth", board) || 1;
 				this.beginPath();
 				this.arc(xr-board.ls, yr-board.ls, radius, 0, 2*Math.PI, true);
 				this.stroke();
@@ -913,18 +913,32 @@ Board.drawHandlers = {
 					board.proMoveGraphic = graphic;
 				}
 
-				this.drawImage(board.proMoveGraphic, xr - sr, yr - sr, 2 * sr, 2 * sr);
+				var stone_here = is_here_stone(board, args.x, args.y);
 
-				this.strokeStyle = "black";
-				this.lineWidth = 2;
-				this.beginPath();
-				this.arc(xr-board.ls, yr-board.ls, sr - 1, 0, 2*Math.PI, true);
-				this.stroke();
+				if (!stone_here) {
+					this.drawImage(board.proMoveGraphic, xr - sr, yr - sr, 2 * sr, 2 * sr);
+
+					this.strokeStyle = "black";
+					this.lineWidth = 2;
+					this.beginPath();
+					this.arc(xr-board.ls, yr-board.ls, sr - 1, 0, 2*Math.PI, true);
+					this.stroke();
+				}
 			}
 		},
 		textLayer: {
 			draw: function(args, board) {
-				draw_solution_text(this, args, board);
+				var xrText = board.getXText(args.x),
+				yrText = board.getYText(args.y),
+				sr = board.stoneRadius;
+
+				var stone_here = is_here_stone(board, args.x, args.y);
+
+				this.font = .5 * sr + "px verdana";	
+				this.textBaseline = "top";
+				this.fillStyle = stone_here ? "white" : "black";
+				this.textAlign = "center";
+				this.fillText("Pro", xrText - 0.5 * sr, yrText - 0.9 * sr, sr);
 			}
 		}
 	},
@@ -934,7 +948,7 @@ Board.drawHandlers = {
 			draw: function(args, board) {
 				var xr = board.getX(args.x),
 					yr = board.getY(args.y),
-					sr = board.stoneRadius;				
+					sr = board.stoneRadius;
 
 				var redraw = function() {
 					board.redraw();
@@ -999,6 +1013,38 @@ Board.drawHandlers = {
 		textLayer: {
 			draw: function(args, board) {
 				draw_solution_text(this, args, board);
+			}
+		}
+	},
+
+	wrongAnswer: {
+		stone: {
+			draw: function(args, board) {
+				var xr = board.getX(args.x),
+					yr = board.getY(args.y),
+					sr = board.stoneRadius;				
+
+				var redraw = function() {
+					board.redraw();
+				};
+
+				if (typeof board.wrongAnswerGraphic === 'string')
+				{
+					var graphic = new Image();
+					graphic.onload = redraw;
+					graphic.src = board.wrongAnswerGraphic;
+					board.wrongAnswerGraphic = graphic;
+				}
+				
+				this.globalAlpha = 0.3;
+				board.stoneHandler.stone.draw.call(this, args, board)
+				this.globalAlpha = 1;
+
+				this.strokeStyle = "black";
+				this.lineWidth = 2;
+				this.beginPath();
+				this.arc(xr-board.ls, yr-board.ls, sr - 1, 0, 2*Math.PI, true);
+				this.stroke();
 			}
 		}
 	},
@@ -1771,7 +1817,7 @@ Board.default = {
 
 	//background: WGo.DIR+"wood1.jpg",    // Original version, tileing
 	//background: WGo.DIR+"wood_512.jpg", // Mobile friendly, low resolution
-	background: WGo.DIR+"textures/wood_1024.jpg",  // High resolution version, use with REALISTIC handler
+	background: WGo.DIR+"textures/wood.jpg",  // High resolution version, use with REALISTIC handler
 
 	//whiteStoneGraphic: [ WGo.DIR+"white_128.png" ], // Single image only, hires
 	//blackStoneGraphic: [ WGo.DIR+"black_128.png" ], // Single image only, hires
@@ -1791,11 +1837,7 @@ Board.default = {
 												WGo.DIR + "stones/white09_128.png",
 												WGo.DIR + "stones/white10_128.png"
 										 ],
-	blackStoneGraphic: [ 	WGo.DIR + "stones/black00_128.png",
-												WGo.DIR + "stones/black01_128.png",
-												WGo.DIR + "stones/black02_128.png",
-												WGo.DIR + "stones/black03_128.png"
-										 ],
+	blackStoneGraphic: [WGo.DIR + "stones/black04_128.png"],
 	aiMoveGraphic: WGo.DIR + "stones/katago_best_move.png",
 	proMoveGraphic: WGo.DIR + "stones/pro_move.png",
 	additionalSolutionsGraphic: WGo.DIR + "stones/katago_move.png",

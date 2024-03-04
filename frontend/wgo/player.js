@@ -118,6 +118,15 @@ var detect_scrolling = function(node, bp) {
 	else return detect_scrolling(node.parentNode, bp);
 }
 
+var remove_last_mark = function(player) {
+	if (player._editable._last_mark) {		
+		player.board.removeObject(player._editable._last_mark);
+		delete player._editable._last_mark;
+		delete player._editable._lastX;
+		delete player._editable._lastY;
+	}
+}
+
 // mouse wheel event callback, for replaying a game
 var wheel_lis = function(e) {
 	var delta = e.wheelDelta || e.detail*(-1);
@@ -127,11 +136,14 @@ var wheel_lis = function(e) {
 
 	if(delta < 0) {
 		this.next();
+		this.enableAttemptsMaybe();
 		if(this.config.lockScroll && e.preventDefault) e.preventDefault();
 		return !this.config.lockScroll;
 	}
 	else if(delta > 0) {
 		this.previous();
+		this.ignore_attempts = true;
+		remove_last_mark(this);
 		if(this.config.lockScroll && e.preventDefault) e.preventDefault();
 		return !this.config.lockScroll;
 	}
@@ -145,8 +157,15 @@ var key_lis = function(e) {
 	if(focusedElements) return true;
 	
 	switch(e.keyCode){
-		case 39: this.next(); break;
-		case 37: this.previous(); break;
+		case 39: 
+			this.next(); 
+			this.enableAttemptsMaybe(); 
+			break;
+		case 37: 
+			this.previous(); 
+			this.ignore_attempts = true; 
+			remove_last_mark(this); 
+			break;
 		//case 40: this.selectAlternativeVariation(); break;
 		default: return true;
 	}
@@ -275,6 +294,12 @@ Player.prototype = {
 		this.dispatchEvent(ev);
 	},
 
+	enableAttemptsMaybe: function() {
+		if (this.board.solutions.length === 0 && this.kifuReader.path.m == this.kifuReader.kifu.nodeCount){
+			this.ignore_attempts = false;
+		}
+	},
+
 	refreshToken: function(callback) {
 		var refreshCall = $.ajax({
 			type: "GET",
@@ -337,20 +362,21 @@ Player.prototype = {
 			problem.kifu = kifu;
 			player.new_problem = problem;
 
-			if (callback) {
-				callback.call(player);
-			}
-
 			player.dispatchEvent({
 				type: "problemLoaded",
 				target: player,
 				kifu: player.kifu,
 			});
+
+			if (callback) {
+				callback.call(player);
+			}
 		});
 	},
 
 	activateNewProblem: function(player) {
 		player = player || this;
+		player.board.solutions = [];
 		player.kifu = player.new_problem.kifu;
 		player.new_problem.kifu = null;
 		player.problem = player.new_problem;
