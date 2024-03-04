@@ -127,6 +127,7 @@ def get_new_problem(current_user):
 
     problem = problems_in_rating_range[random.randint(0, len(problems_in_rating_range) - 1)]
     #problem = problems_in_rating_range[0]
+    #problem = [p for p in problems if p.id == 1572][0]
 
     mysql.query("select move_number, move from game_move where game_id = %s", (problem.game_id))
     result = mysql.cursor.fetchall()

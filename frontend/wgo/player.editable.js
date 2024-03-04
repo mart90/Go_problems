@@ -94,6 +94,7 @@ WGo.Player.Editable.prototype.play = function(x,y) {
 	player.ignore_attempts = true;
 	
 	var move = player.XyToStringMove(x, y);
+	var solved = false;
 
 	var makeAttemptCall = $.ajax({ 
 		type: "POST",
@@ -131,20 +132,27 @@ WGo.Player.Editable.prototype.play = function(x,y) {
 			else if (solution.winrate == 0 && bestSolution.move != solution.move) {
 				solutionMove.type = "proMove";
 				player.board.addObject(solutionMove);
-			}
-			
-			if (solution.winrate > 0 && solution.winrate != maxWinrate) {
-				solutionMove.type = "additionalSolution";
-				player.board.addObject(solutionMove);
 				player.board.solutions.push({
 					x: solutionMove.x,
 					y: solutionMove.y,
-					winrate: solution.winrate,
-					score_lead: solution.score_lead
-				})
-			}
+					winrate: 0,
+					score_lead: 0
+				});
+			}			
+			// There are currently no problems with multiple solutions. Keeping this here for a potential future where they are added
+			// else if (solution.winrate > 0 && solution.winrate != maxWinrate) {
+			// 	solutionMove.type = "additionalSolution";
+			// 	player.board.addObject(solutionMove);
+			// 	player.board.solutions.push({
+			// 		x: solutionMove.x,
+			// 		y: solutionMove.y,
+			// 		winrate: solution.winrate,
+			// 		score_lead: solution.score_lead
+			// 	})
+			// }
 
-			if (solution.winrate > 0 && solution.move == move){
+			if (solution.move == move){
+				solved = true;
 				player.kifuReader.node.appendChild(new WGo.KNode({
 					move: {
 						x: x, 
@@ -157,22 +165,24 @@ WGo.Player.Editable.prototype.play = function(x,y) {
 			}
 		}
 
+		if (!solved){
+			player.board.addObject({
+				type: "wrongAnswer",
+				x: x,
+				y: y
+			})
+		}
+
 		document.getElementById("currentRating").innerHTML = Math.round(result.new_rating);
 
-		var plus = "";
-		if (result.rating_change > 0) {
-			plus = "+"
-		}
+		var plus = result.rating_change > 0 ? "+" : "";
 
 		document.getElementById("ratingChange").innerHTML = "(" + plus + Math.round(result.rating_change * 10) / 10 + ")";
 
 		var imgFilename = result.success ? "correct.png" : "wrong.png";
 		document.getElementById("feedbackImage").src = WGo.DIR + "textures/" + imgFilename;
 
-		plus = "";
-		if (result.problem_rating_change > 0) {
-			plus = "+";
-		}
+		plus = result.problem_rating_change > 0 ? "+" : "";
 
 		player.kifu.info = {
 			problem_id: result.problem_id,
