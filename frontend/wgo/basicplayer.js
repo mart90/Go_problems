@@ -402,10 +402,9 @@ WGo.i18n.en["BP:closemsg"] = "click anywhere to close this window";
 //--- Handling <div> with HTML5 data attributes -----------------------------------------------------------------
 
 BasicPlayer.attributes = {
-	"data-wgo": function(value) {
-		if(value) {
-			if(value[0] == "(") this.sgf = value;
-			else this.sgfFile = value;
+	"data-wgo": function (value) {
+		if (value[0] != "{") {
+			this.problemId = value;
 		}
 	},
 	
@@ -493,8 +492,17 @@ var player_from_tag = function(elem) {
 
 WGo.BasicPlayer = BasicPlayer;
 
+////////////////////////////
+////////////////////////////
+////////////////////////////
+////////////////////////////
+// ENTRY POINT OF THE APP //
+////////////////////////////
+////////////////////////////
+////////////////////////////
+////////////////////////////
 window.addEventListener("load", function() {
-	var pl_elems = document.querySelectorAll("[data-wgo],[data-wgo-diagram]");
+	var pl_elems = document.querySelectorAll("[data-wgo]");
 
 	for(var i = 0; i < pl_elems.length; i++) {
 		player_from_tag(pl_elems[i]);

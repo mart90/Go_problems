@@ -1,7 +1,7 @@
 import jwt
 import random
 import datetime
-from flask import Flask, request, Response, make_response, jsonify
+from flask import Flask, request, Response, make_response, jsonify, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 from mysql import *
 from decorators import token_required
@@ -129,9 +129,7 @@ def get_new_problem(current_user):
     #problem = problems_in_rating_range[0]
     #problem = [p for p in problems if p.id == 1572][0]
 
-    mysql.query("select move_number, move from game_move where game_id = %s", (problem.game_id))
-    result = mysql.cursor.fetchall()
-    problem.game_moves = [GameMove(row[0], row[1]) for row in result]
+    problem.game_moves = GameMove.get_by_game(mysql, problem.game_id)
 
     mysql.commit_and_close()
 
@@ -166,24 +164,10 @@ def make_attempt(current_user):
     result = mysql.cursor.fetchone()
     problem = Problem(result[0], None, result[1], result[2], None, None, result[3], result[4])
 
-    mysql.query("""select kgm.move, kgm.winrate, kgm.score_lead
-        from katago_move kgm
-        join problem p on p.id = %s
-        where 
-            kgm.game_id = p.game_id
-            and kgm.move_number = p.move_number
-        union
-        select gm.move, 0, 0
-        from game_move gm
-        join problem p on p.id = %s
-        where 
-            gm.game_id = p.game_id
-            and gm.move_number = p.move_number""", (problem_id, problem_id))
-
-    result = mysql.cursor.fetchall()
+    problem.set_solutions(mysql)
 
     success = False
-    for row in result:
+    for row in problem.solutions:
         if move == row[0]:
             success = True
 
@@ -224,5 +208,58 @@ def make_attempt(current_user):
             "move": row[0],
             "winrate": row[1],
             "score_lead": row[2]
-        } for row in result]
+        } for row in problem.solutions]
+    }
+
+
+@app.route("/problem/<id>", methods=["GET"])
+def get_problem_view(id):
+    return render_template("frontend/player.html", problemId=id)
+
+
+@app.route("/backend/problem/<id>", methods=["GET"])
+@token_required
+def get_problem_by_id(current_user, id):
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+
+    mysql.query("""
+        select
+            p.rating,
+            g.id as game_id,
+            g.title as game_title,
+            g.date_played as game_date_played,
+            (select count(*) from problem_attempt pa where pa.problem_id = p.id) as attempts,
+            p.move_number
+        from problem p
+        join game g on g.id = p.game_id
+        where p.id = %s""", (id))
+    
+    result = mysql.cursor.fetchone()
+
+    if (result is None):
+        return make_response('There is no problem with this id', 404)
+
+    problem = Problem(id, result[1], result[0], None, result[5], result[4], result[2], result[3])
+    problem.set_solutions(mysql)
+    problem.game_moves = GameMove.get_by_game(mysql, problem.game_id)
+
+    mysql.commit_and_close()
+
+    return {
+        "id": problem.id,
+        "move_number": problem.move_number,
+        "rating": problem.rating,
+        "times_attempted": problem.attempts,
+        "game_id": problem.game_id,
+        "game_title": problem.game_title,
+        "game_date": problem.game_date,
+        "game_moves": [{
+            "move_number": gm.move_number,
+            "move": gm.move
+        } for gm in problem.game_moves if gm.move_number < problem.move_number],
+        "solutions": [{
+            "move": row[0],
+            "winrate": row[1],
+            "score_lead": row[2]
+        } for row in problem.solutions]
     }

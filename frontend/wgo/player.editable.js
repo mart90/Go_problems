@@ -50,49 +50,7 @@ var pos_diff = function(old_p, new_p) {
 	}
 }
 
-WGo.Player.Editable = {};
-
-/**
- * Toggle edit mode.
- */
-	
-WGo.Player.Editable = function(player, board) {
-	this.player = player;
-	this.board = board;
-	this.editMode = true;
-}
-
-WGo.Player.Editable.prototype.set = function(problem, token) {
-	// save original kifu reader
-	this.originalReader = this.player.kifuReader;
-	
-	// create new reader with cloned kifu
-	this.player.kifuReader = new WGo.KifuReader(this.player.kifu.clone(), this.originalReader.rememberPath, this.originalReader.allow_illegal, this.originalReader.allow_illegal);
-	
-	// go to current position
-	this.player.kifuReader.goTo(this.originalReader.path);
-	
-	// register edit listeners
-	this._ev_click = this._ev_click || this.play.bind(this);
-	this._ev_move = this._ev_move || edit_board_mouse_move.bind(this);
-	this._ev_out = this._ev_out || edit_board_mouse_out.bind(this);
-	
-	this.board.addEventListener("click", this._ev_click);
-	this.board.addEventListener("mousemove", this._ev_move);
-	this.board.addEventListener("mouseout", this._ev_out);
-	
-	this.editMode = true;
-}
-
-WGo.Player.Editable.prototype.play = function(x,y) {
-	var player = this.player;
-
-	if (player.frozen || player.ignore_attempts || !player.kifuReader.game.isValid(x, y)) {
-		return;
-	}
-
-	player.ignore_attempts = true;
-	
+var make_attempt = function (player, x, y) {
 	var move = player.XyToStringMove(x, y);
 	var solved = false;
 
@@ -110,7 +68,7 @@ WGo.Player.Editable.prototype.play = function(x,y) {
 	});
 
 	makeAttemptCall.done(function (result) {
-		player.loadNewProblem();
+		player.loadRandomProblem();
 		
 		var maxWinrate = Math.max(...result.solutions.map(e => e.winrate))
 		var bestSolution = result.solutions.find(e => e.winrate == maxWinrate)
@@ -140,6 +98,7 @@ WGo.Player.Editable.prototype.play = function(x,y) {
 				});
 			}			
 			// There are currently no problems with multiple solutions. Keeping this here for a potential future where they are added
+
 			// else if (solution.winrate > 0 && solution.winrate != maxWinrate) {
 			// 	solutionMove.type = "additionalSolution";
 			// 	player.board.addObject(solutionMove);
@@ -199,6 +158,137 @@ WGo.Player.Editable.prototype.play = function(x,y) {
 
 		player.board.redraw();
 	});
+}
+
+var make_attempt_unranked = function (player, x, y) {
+	var move = player.XyToStringMove(x, y);
+	var solved = false;
+	
+	player.loadRandomProblem();
+		
+	var maxWinrate = Math.max(...player.problem.solutions.map(e => e.winrate))
+	var bestSolution = player.problem.solutions.find(e => e.winrate == maxWinrate)
+	player.board.solutions = [];
+
+	for (solution of player.problem.solutions){
+		var solutionMove = player.StringMoveToXy(solution.move);
+
+		if (solution.winrate == maxWinrate){
+			solutionMove.type = "aiMove";
+			player.board.addObject(solutionMove);
+			player.board.solutions.push({
+				x: solutionMove.x,
+				y: solutionMove.y,
+				winrate: solution.winrate,
+				score_lead: solution.score_lead
+			});
+		}
+		else if (solution.winrate == 0 && bestSolution.move != solution.move) {
+			solutionMove.type = "proMove";
+			player.board.addObject(solutionMove);
+			player.board.solutions.push({
+				x: solutionMove.x,
+				y: solutionMove.y,
+				winrate: 0,
+				score_lead: 0
+			});
+		}			
+		// There are currently no problems with multiple solutions. Keeping this here for a potential future where they are added
+
+		// else if (solution.winrate > 0 && solution.winrate != maxWinrate) {
+		// 	solutionMove.type = "additionalSolution";
+		// 	player.board.addObject(solutionMove);
+		// 	player.board.solutions.push({
+		// 		x: solutionMove.x,
+		// 		y: solutionMove.y,
+		// 		winrate: solution.winrate,
+		// 		score_lead: solution.score_lead
+		// 	})
+		// }
+
+		if (solution.move == move){
+			solved = true;
+			player.kifuReader.node.appendChild(new WGo.KNode({
+				move: {
+					x: x, 
+					y: y, 
+					c: player.kifuReader.game.turn
+				}, 
+				_edited: true
+			}));
+			player.next(player.kifuReader.node.children.length-1);
+		}
+	}
+
+	if (!solved){
+		player.board.addObject({
+			type: "wrongAnswer",
+			x: x,
+			y: y
+		})
+	}
+
+	var imgFilename = solved ? "correct.png" : "wrong.png";
+	document.getElementById("feedbackImage").src = WGo.DIR + "textures/" + imgFilename;
+
+	player.dispatchEvent({
+		type: "solutionLoaded",
+		target: player,
+		kifu: player.kifu,
+	});
+
+	player.board.redraw();
+}
+
+WGo.Player.Editable = {};
+
+/**
+ * Toggle edit mode.
+ */
+	
+WGo.Player.Editable = function(player, board) {
+	this.player = player;
+	this.board = board;
+	this.editMode = true;
+}
+
+WGo.Player.Editable.prototype.set = function(problem, token) {
+	// save original kifu reader
+	this.originalReader = this.player.kifuReader;
+	
+	// create new reader with cloned kifu
+	this.player.kifuReader = new WGo.KifuReader(this.player.kifu.clone(), this.originalReader.rememberPath, this.originalReader.allow_illegal, this.originalReader.allow_illegal);
+	
+	// go to current position
+	this.player.kifuReader.goTo(this.originalReader.path);
+	
+	// register edit listeners
+	this._ev_click = this._ev_click || this.play.bind(this);
+	this._ev_move = this._ev_move || edit_board_mouse_move.bind(this);
+	this._ev_out = this._ev_out || edit_board_mouse_out.bind(this);
+	
+	this.board.addEventListener("click", this._ev_click);
+	this.board.addEventListener("mousemove", this._ev_move);
+	this.board.addEventListener("mouseout", this._ev_out);
+	
+	this.editMode = true;
+}
+
+WGo.Player.Editable.prototype.play = function(x,y) {
+	var player = this.player;
+
+	if (player.frozen || player.ignore_attempts || !player.kifuReader.game.isValid(x, y)) {
+		return;
+	}
+
+	player.ignore_attempts = true;
+
+	if (player.unranked) {
+		make_attempt_unranked(player, x, y);
+	}
+	else {
+		make_attempt(player, x, y);
+	}
 }
 
 WGo.i18n.en["editmode"] = "Edit mode";

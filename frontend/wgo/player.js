@@ -265,8 +265,15 @@ Player.prototype = {
 			ratingCall.done(function (result){
 				document.getElementById("currentRating").innerHTML = Math.round(result);
 			});
-			
-			this.loadKifu();
+
+			if (this.config.problemId) {
+				// We're loading a specific problem
+				this.unranked = true;
+				this.loadProblem(this.config.problemId, this.activateNewProblem);
+			}
+			else {
+				this.loadRandomProblem(this.activateNewProblem);
+			}
 		}
 	},
 
@@ -315,7 +322,65 @@ Player.prototype = {
 		});
 	},
 
-	loadNewProblem: function(callback) {
+	loadProblem: function (problemId, callback) {		
+		var player = this;
+
+		var newProblemCall = $.ajax({ 
+			type: "GET", 
+			url: server_address + "backend/problem/" + problemId,
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+			}
+		});
+
+		newProblemCall.done(function (problem) {
+			var kifu = new WGo.Kifu();
+			kifu.nodeCount = 0;
+			var node = kifu.root;
+			var c = 1;
+
+			for (var mn = 0; mn < problem.game_moves.length; mn++) {
+				if (mn == problem.move_number) {
+					break;
+				}
+				var move = problem.game_moves[mn]
+				var newNode = new WGo.KNode();
+				newNode.parent = node;
+
+				var xyMove = player.StringMoveToXy(move.move);
+				xyMove.c = c;
+				newNode.move = xyMove;
+
+				node.appendChild(newNode);
+				kifu.nodeCount++;
+				node = newNode;
+
+				c *= -1
+			}
+
+			problem.kifu = kifu;
+			problem.kifu.info = {
+				problem_id: problem.id,
+				problem_rating: Math.round(problem.rating),
+				problem_from_game: problem.game_title,
+				problem_game_date: new Date(problem.game_date).toDateString()
+			};
+
+			player.new_problem = problem;
+
+			player.dispatchEvent({
+				type: "problemLoaded",
+				target: player,
+				kifu: player.kifu,
+			});
+
+			if (callback) {
+				callback.call(player);
+			}
+		});
+	},
+
+	loadRandomProblem: function (callback) {	
 		var expires_at = new Date(localStorage.getItem('token_expires_at'));
 		var current_date = new Date();
 		expires_at.setMinutes(expires_at.getHours() - 23);
@@ -323,7 +388,7 @@ Player.prototype = {
 		if (current_date > expires_at){
 			this.refreshToken();
 		}
-		
+
 		var player = this;
 
 		var newProblemCall = $.ajax({ 
@@ -406,10 +471,6 @@ Player.prototype = {
 		player.ignore_attempts = false;
 		player._editable = new WGo.Player.Editable(player, player.board);
 		player._editable.set();
-	},
-
-	loadKifu: function() {
-		this.loadNewProblem(this.activateNewProblem);
 	},
 
 	/**
@@ -703,7 +764,9 @@ Player.default = {
 	displayVariations: true,
 	problem: undefined,
 	ignore_attempts: false,
-	new_problem: {}
+	new_problem: {},
+	unranked: false,
+	problem_solutions: []
 }
 
 WGo.Player = Player;

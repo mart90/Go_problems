@@ -431,16 +431,20 @@ Control.widgets = [ {
 				click: function(player) {
 					if (player.new_problem != null){
 						player.activateNewProblem();
-						document.getElementById("feedbackImage").src = "";
-						document.getElementById("ratingChange").innerHTML = "";
-						player.kifu.info = {};
-
-						player.dispatchEvent({
-							type: "solutionUnloaded",
-							target: player,
-							kifu: player.kifu,
-						});
 					}
+					else {
+						player.loadRandomProblem(player.activateNewProblem);
+					}
+					player.unranked = false;
+					document.getElementById("feedbackImage").src = "";
+					document.getElementById("ratingChange").innerHTML = "";
+					player.kifu.info = {};
+
+					player.dispatchEvent({
+						type: "solutionUnloaded",
+						target: player,
+						kifu: player.kifu,
+					});
 				},
 			}
 		}]
