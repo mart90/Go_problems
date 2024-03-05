@@ -474,9 +474,9 @@ input[type="text"].wgo-player-mn-value  {
 }
 
 .wgo-menu-item {
-	padding: 5px 10px 5px 5px;
-	font-size: 20px;
-	font-weight: 200;
+	padding: 20px 10px 10px 5px;
+	font-size: 25px;
+	font-weight: 300;
 	background-color: rgba(255,255,255,0.85);
 	cursor: pointer;
 	background-repeat: no-repeat;
@@ -499,6 +499,7 @@ input[type="text"].wgo-player-mn-value  {
 
 .wgo-menu-item.wgo-selected::before {
 	content: '\e813';
+	padding-right: 10px;
 }
 
 .wgo-menu-item.wgo-disabled {
