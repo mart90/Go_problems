@@ -352,7 +352,7 @@ button.wgo-button.wgo-button-next_problem:not([disabled]):hover {
 button.wgo-button.wgo-button-next_problem {
 	width: 178px;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
-	font-size: 16px;
+	font-size: 18px;
     font-weight: 600;
 	background-color: rgba(255, 255, 255, 0.274);
     color: #080710;
@@ -475,6 +475,8 @@ input[type="text"].wgo-player-mn-value  {
 
 .wgo-menu-item {
 	padding: 5px 10px 5px 5px;
+	font-size: 20px;
+	font-weight: 200;
 	background-color: rgba(255,255,255,0.85);
 	cursor: pointer;
 	background-repeat: no-repeat;
