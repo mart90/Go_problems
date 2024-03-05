@@ -15,7 +15,7 @@ from game_move import GameMove
 
 # python -m flask run
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="frontend")
 app.wsgi_app = ProxyFix(
     app.wsgi_app, 
     x_for=1, 
