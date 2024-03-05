@@ -109,27 +109,25 @@ var make_attempt = function (player, x, y) {
 			// 		score_lead: solution.score_lead
 			// 	})
 			// }
-
-			if (solution.move == move){
-				solved = true;
-				player.kifuReader.node.appendChild(new WGo.KNode({
-					move: {
-						x: x, 
-						y: y, 
-						c: player.kifuReader.game.turn
-					}, 
-					_edited: true
-				}));
-				player.next(player.kifuReader.node.children.length-1);
-			}
 		}
 
-		if (!solved){
+		if (result.success) {
+			player.kifuReader.node.appendChild(new WGo.KNode({
+				move: {
+					x: x, 
+					y: y, 
+					c: player.kifuReader.game.turn
+				}, 
+				_edited: true
+			}));
+			player.next(player.kifuReader.node.children.length-1);
+		}
+		else {
 			player.board.addObject({
 				type: "wrongAnswer",
 				x: x,
 				y: y
-			})
+			});
 		}
 
 		document.getElementById("currentRating").innerHTML = Math.round(result.new_rating);
@@ -173,6 +171,10 @@ var make_attempt_unranked = function (player, x, y) {
 	for (solution of player.problem.solutions){
 		var solutionMove = player.StringMoveToXy(solution.move);
 
+		if (solution.move == move){
+			solved = true;
+		}
+
 		if (solution.winrate == maxWinrate){
 			solutionMove.type = "aiMove";
 			player.board.addObject(solutionMove);
@@ -205,22 +207,20 @@ var make_attempt_unranked = function (player, x, y) {
 		// 		score_lead: solution.score_lead
 		// 	})
 		// }
-
-		if (solution.move == move){
-			solved = true;
-			player.kifuReader.node.appendChild(new WGo.KNode({
-				move: {
-					x: x, 
-					y: y, 
-					c: player.kifuReader.game.turn
-				}, 
-				_edited: true
-			}));
-			player.next(player.kifuReader.node.children.length-1);
-		}
 	}
 
-	if (!solved){
+	if (solved) {
+		player.kifuReader.node.appendChild(new WGo.KNode({
+			move: {
+				x: x, 
+				y: y, 
+				c: player.kifuReader.game.turn
+			}, 
+			_edited: true
+		}));
+		player.next(player.kifuReader.node.children.length-1);
+	}
+	else {
 		player.board.addObject({
 			type: "wrongAnswer",
 			x: x,
