@@ -15,7 +15,7 @@ from game_move import GameMove
 
 # python -m flask run
 
-app = Flask(__name__, template_folder="frontend")
+app = Flask(__name__, template_folder="frontend/templates")
 app.wsgi_app = ProxyFix(
     app.wsgi_app, 
     x_for=1, 
@@ -214,7 +214,7 @@ def make_attempt(current_user):
 
 @app.route("/problem/<id>", methods=["GET"])
 def get_problem_view(id):
-    return render_template("frontend/player.html", problemId=id)
+    return render_template("problem.html", problemId=id)
 
 
 @app.route("/backend/problem/<id>", methods=["GET"])
