@@ -249,31 +249,25 @@ Player.prototype = {
 	},
 
 	initGame: function() {
-		var token = localStorage.getItem('token');
-		if (!token || token == "undefined") {
-			window.location.href = server_address + "login.html";
+		var ratingCall = $.ajax({
+			type: "GET",
+			url: server_address + "backend/get_current_rating",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+			}
+		});
+	
+		ratingCall.done(function (result){
+			document.getElementById("currentRating").innerHTML = Math.round(result);
+		});
+
+		if (this.config.problemId) {
+			// We're loading a specific problem
+			this.unranked = true;
+			this.loadProblem(this.config.problemId, this.activateNewProblem);
 		}
 		else {
-			var ratingCall = $.ajax({
-				type: "GET",
-				url: server_address + "backend/get_current_rating",
-				beforeSend: function (xhr) {
-					xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
-				}
-			});
-		
-			ratingCall.done(function (result){
-				document.getElementById("currentRating").innerHTML = Math.round(result);
-			});
-
-			if (this.config.problemId) {
-				// We're loading a specific problem
-				this.unranked = true;
-				this.loadProblem(this.config.problemId, this.activateNewProblem);
-			}
-			else {
-				this.loadRandomProblem(this.activateNewProblem);
-			}
+			this.loadRandomProblem(this.activateNewProblem);
 		}
 	},
 
