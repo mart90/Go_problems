@@ -42,7 +42,7 @@ for filename in [f for f in os.listdir("frontend") if os.path.isfile("frontend/"
     with open("frontend/" + filename, 'w') as file:
         file.write(filedata)
 
-for filename in [f for f in os.listdir("frontend/templates") if os.path.isfile("frontend/templates" + f)]:
+for filename in [f for f in os.listdir("frontend/templates") if os.path.isfile("frontend/templates/" + f)]:
     with open("frontend/templates/" + filename, 'r') as file:
         filedata = file.read()
 
