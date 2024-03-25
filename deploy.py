@@ -17,18 +17,18 @@ subprocess.run("git clean -f; git reset --hard; git pull", shell=True)
 
 print("Updating filenames")
 filenames = []
-for filename in [f for f in os.listdir("frontend/wgo") if os.path.isfile(f)]:
+for filename in [f for f in os.listdir("frontend/wgo") if os.path.isfile("frontend/wgo/" + f)]:
     filenames.append(filename)
     os.rename("frontend/wgo/" + filename, "frontend/wgo/" + str(config["cache_version"]) + "_" + filename)
-for filename in [f for f in os.listdir("frontend/wgo/themes") if os.path.isfile(f)]:
+for filename in [f for f in os.listdir("frontend/wgo/themes") if os.path.isfile("frontend/wgo/themes/" + f)]:
     filenames.append(filename)
     os.rename("frontend/wgo/themes/" + filename, "frontend/wgo/themes/" + str(config["cache_version"]) + "_" + filename)
-for filename in [f for f in os.listdir("frontend/css") if os.path.isfile(f)]:
+for filename in [f for f in os.listdir("frontend/css") if os.path.isfile("frontend/css/" + f)]:
     filenames.append(filename)
     os.rename("frontend/css/" + filename, "frontend/css/" + str(config["cache_version"]) + "_" + filename)
 
 print("Updating references")
-for filename in [f for f in os.listdir("frontend") if os.path.isfile(f)]:
+for filename in [f for f in os.listdir("frontend") if os.path.isfile("frontend/" + f)]:
     with open("frontend/" + filename, 'r') as file:
         filedata = file.read()
 
@@ -38,7 +38,7 @@ for filename in [f for f in os.listdir("frontend") if os.path.isfile(f)]:
     with open("frontend/" + filename, 'w') as file:
         file.write(filedata)
 
-for filename in [f for f in os.listdir("frontend/templates") if os.path.isfile(f)]:
+for filename in [f for f in os.listdir("frontend/templates") if os.path.isfile("frontend/templates" + f)]:
     with open("frontend/templates/" + filename, 'r') as file:
         filedata = file.read()
 
