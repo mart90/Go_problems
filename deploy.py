@@ -1,9 +1,10 @@
-# 1. git reset --hard
-# 2. git pull
-# 3. Update version number for JS and CSS files
-# 4. Update references in html files with the version number
-# 5. Restart gunicorn
-# 6. Update version number in config
+# 1. git clean -f
+# 2. git reset --hard
+# 3. git pull
+# 4. Update version number for JS and CSS files
+# 5. Update references in html files with the version number
+# 6. Restart gunicorn
+# 7. Update version number in config
 
 import subprocess
 import time
@@ -12,22 +13,22 @@ from config import config
 
 
 print("Pulling latest version")
-subprocess.run("git reset --hard; git pull", shell=True)
+subprocess.run("git clean -f; git reset --hard; git pull", shell=True)
 
 print("Updating filenames")
 filenames = []
-for filename in os.listdir("frontend/wgo"):
+for filename in [f for f in os.listdir("frontend/wgo") if os.path.isfile(f)]:
     filenames.append(filename)
     os.rename("frontend/wgo/" + filename, "frontend/wgo/" + str(config["cache_version"]) + "_" + filename)
-for filename in os.listdir("frontend/wgo/themes"):
+for filename in [f for f in os.listdir("frontend/wgo/themes") if os.path.isfile(f)]:
     filenames.append(filename)
     os.rename("frontend/wgo/themes/" + filename, "frontend/wgo/themes/" + str(config["cache_version"]) + "_" + filename)
-for filename in os.listdir("frontend/css"):
+for filename in [f for f in os.listdir("frontend/css") if os.path.isfile(f)]:
     filenames.append(filename)
     os.rename("frontend/css/" + filename, "frontend/css/" + str(config["cache_version"]) + "_" + filename)
 
 print("Updating references")
-for filename in os.listdir("frontend"):
+for filename in [f for f in os.listdir("frontend") if os.path.isfile(f)]:
     with open("frontend/" + filename, 'r') as file:
         filedata = file.read()
 
@@ -37,7 +38,7 @@ for filename in os.listdir("frontend"):
     with open("frontend/" + filename, 'w') as file:
         file.write(filedata)
 
-for filename in os.listdir("frontend/templates"):
+for filename in [f for f in os.listdir("frontend/templates") if os.path.isfile(f)]:
     with open("frontend/templates/" + filename, 'r') as file:
         filedata = file.read()
 
