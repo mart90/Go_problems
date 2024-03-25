@@ -37,7 +37,7 @@ for filename in [f for f in os.listdir("frontend") if os.path.isfile("frontend/"
         filedata = file.read()
 
     for file_ref in filenames:
-        filedata = filedata.replace(file_ref, "/" + str(config["cache_version"]) + "_" + file_ref)
+        filedata = filedata.replace(file_ref, "/" + str(config["cache_version"]) + "_" + file_ref[1:])
 
     with open("frontend/" + filename, 'w') as file:
         file.write(filedata)
@@ -47,7 +47,7 @@ for filename in [f for f in os.listdir("frontend/templates") if os.path.isfile("
         filedata = file.read()
 
     for file_ref in filenames:
-        filedata = filedata.replace(file_ref, "/" + str(config["cache_version"]) + "_" + file_ref)
+        filedata = filedata.replace(file_ref, "/" + str(config["cache_version"]) + "_" + file_ref[1:])
 
     with open("frontend/templates/" + filename, 'w') as file:
         file.write(filedata)
