@@ -134,7 +134,6 @@ def get_new_problem(current_user):
     mysql.commit_and_close()
 
     return {
-        "id": problem.id,
         "game_id": problem.game_id,
         "move_number": problem.move_number,
         "rating": problem.rating,
@@ -152,14 +151,17 @@ def make_attempt(current_user):
     mysql = MySQL().connect(mysql_ip, mysql_db)
     body = request.json
 
-    problem_id = body["problemId"]
+    game_id = body["gameId"]
+    move_number = body["moveNumber"]
     move = body["move"]
 
     mysql.query("""
         select p.id, p.rating, p.kfactor, g.title, g.date_played 
         from problem p
         join game g on g.id = p.game_id
-        where p.id = %s""", (problem_id))
+        where 
+            p.game_id = %s
+            and p.move_number = %s""", (game_id, move_number))
     
     result = mysql.cursor.fetchone()
     problem = Problem(result[0], None, result[1], result[2], None, None, result[3], result[4])
@@ -186,7 +188,7 @@ def make_attempt(current_user):
     problem.update_rating(mysql)
 
     mysql.query("insert into problem_attempt (problem_id, user_id, success, user_new_rating, problem_new_rating) values (%s, %s, %s, %s, %s)", (
-        problem_id,
+        problem.id,
         current_user.id,
         1 if success else 0,
         current_user.rating,

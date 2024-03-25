@@ -62,7 +62,8 @@ var make_attempt = function (player, x, y) {
 			xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
 		},
 		data: JSON.stringify({
-			problemId: player.problem.id,
+			gameId: player.problem.game_id,
+			moveNumber: player.problem.move_number,
 			move: move
 		})
 	});

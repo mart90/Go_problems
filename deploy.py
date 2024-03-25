@@ -7,7 +7,6 @@
 # 7. Update version number in config
 
 import subprocess
-import time
 import os
 from config import config
 
