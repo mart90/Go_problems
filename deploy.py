@@ -3,6 +3,7 @@
 # 3. Update version number for JS and CSS files
 # 4. Update references in html files with the version number
 # 5. Restart gunicorn
+# 6. Update version number in config
 
 import subprocess
 import time
@@ -18,13 +19,13 @@ print("Updating filenames")
 filenames = []
 for filename in os.listdir("frontend/wgo"):
     filenames.append(filename)
-    os.rename(filename, config["cache_version"] + "_" + filename)
+    os.rename(filename, str(config["cache_version"]) + "_" + filename)
 for filename in os.listdir("frontend/wgo/themes"):
     filenames.append(filename)
-    os.rename(filename, config["cache_version"] + "_" + filename)
+    os.rename(filename, str(config["cache_version"]) + "_" + filename)
 for filename in os.listdir("frontend/css"):
     filenames.append(filename)
-    os.rename(filename, config["cache_version"] + "_" + filename)
+    os.rename(filename, str(config["cache_version"]) + "_" + filename)
 
 print("Updating references")
 for filename in os.listdir("frontend"):
@@ -32,7 +33,7 @@ for filename in os.listdir("frontend"):
         filedata = file.read()
 
     for file_ref in filenames:
-        filedata = filedata.replace(file_ref, config["cache_version"] + "_" + file_ref)
+        filedata = filedata.replace(file_ref, str(config["cache_version"]) + "_" + file_ref)
 
     with open(filename, 'w') as file:
         file.write(filedata)
@@ -42,7 +43,7 @@ for filename in os.listdir("frontend/templates"):
         filedata = file.read()
 
     for file_ref in filenames:
-        filedata = filedata.replace(file_ref, config["cache_version"] + "_" + file_ref)
+        filedata = filedata.replace(file_ref, str(config["cache_version"]) + "_" + file_ref)
 
     with open(filename, 'w') as file:
         file.write(filedata)
