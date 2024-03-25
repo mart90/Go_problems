@@ -212,12 +212,12 @@ def make_attempt(current_user):
     }
 
 
-@app.route("/problem/<id>", methods=["GET"])
+@app.route("/problems/<id>", methods=["GET"])
 def get_problem_view(id):
     return render_template("problem.html", problemId=id)
 
 
-@app.route("/backend/problem/<id>", methods=["GET"])
+@app.route("/backend/problems/<id>", methods=["GET"])
 @token_required
 def get_problem_by_id(current_user, id):
     mysql = MySQL().connect(mysql_ip, mysql_db)
