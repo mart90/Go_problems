@@ -15,7 +15,9 @@ from config import config
 print("Pulling latest version")
 subprocess.run("git clean -f; git reset --hard; git pull", shell=True)
 
-os.rename("frontend/wgo/" + str(config["cache_version"] - 1) + "_serverAddress.js", "frontend/wgo/serverAddress.js")
+# serverAddress.js is untracked by git, rename it back to the original manually
+if (os.isfile("frontend/wgo/" + str(config["cache_version"] - 1) + "_serverAddress.js")):
+    os.rename("frontend/wgo/" + str(config["cache_version"] - 1) + "_serverAddress.js", "frontend/wgo/serverAddress.js")
 
 print("Updating filenames")
 filenames = []
