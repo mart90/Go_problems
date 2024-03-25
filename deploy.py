@@ -12,7 +12,7 @@ from config import config
 
 print("Pulling latest version")
 subprocess.run("git reset --hard; git pull", shell=True)
-time.sleep(5000)
+time.sleep(5)
 
 print("Updating filenames")
 filenames = []
