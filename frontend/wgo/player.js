@@ -321,7 +321,7 @@ Player.prototype = {
 
 		var newProblemCall = $.ajax({ 
 			type: "GET", 
-			url: server_address + "backend/problem/" + problemId,
+			url: server_address + "backend/problems/" + problemId,
 			beforeSend: function (xhr) {
 				xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
 			}
