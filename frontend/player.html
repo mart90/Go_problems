@@ -9,6 +9,12 @@
 		if (!token || token == "undefined") {
 			window.location.href = server_address + "login.html";
 		}
+		
+		var expires_at = new Date(localStorage.getItem('token_expires_at'));
+		var current_date = new Date();
+		if (current_date > expires_at){
+			window.location.href = server_address + "login.html";
+		}
 	</script>
 	<script src="wgo/wgo.js"></script>
 	<script src="wgo/kifu.js"></script>
