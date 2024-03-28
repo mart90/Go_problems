@@ -1,21 +1,37 @@
-body{
+body {
 	background-color: #101014;
 }
 *,
 *:before,
-*:after{
+*:after {
     padding: 0;
     margin: 0;
     box-sizing: border-box;
 }
 
-.background{
+.background {
     width: 430px;
     height: 520px;
     position: absolute;
     transform: translate(-50%,-50%);
     left: 50%;
     top: 50%;
+}
+.about {
+    font-size: 20px;
+    font-weight: 800;
+    margin-top: 5px;
+    margin-right: 5px;
+    width: 50px;
+    height: 50px;
+    background-color: #ffffffa6;
+    color: #080710;
+    cursor: pointer;
+    float: right;
+}
+.about:hover {
+    background-color: rgb(255, 255, 255);
+	box-shadow: 0 0 20px 0 rgba(150,150,150,0.5);
 }
 .form {
     height: 490px;
