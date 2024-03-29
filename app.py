@@ -145,6 +145,59 @@ def get_new_problem(current_user):
     }
 
 
+@app.route("/backend/get_new_problem_anonymous", methods=["POST"])
+def get_new_problem_anonymous():
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+
+    rating = float(request.json["rating"])
+
+    mysql.query("""
+        select
+            p.id,
+            g.id as game_id,
+            p.rating,
+            p.move_number,
+            g.title as game_title,
+            g.date_played as game_date_played
+        from problem p
+        join game g on g.id = p.game_id""")
+
+    result = mysql.cursor.fetchall()
+
+    problems = [Problem(row[0], row[1], row[2], 0, row[3], 0, row[4], row[5]) for row in result]
+    problems_in_rating_range = [p for p in problems if rating + 200 > p.rating > rating - 200]
+
+    if not problems_in_rating_range:
+        problems_in_rating_range = [p for p in problems if rating + 500 > p.rating > rating - 500]
+        if not problems_in_rating_range:
+            problems_in_rating_range = problems
+
+    problem = problems_in_rating_range[random.randint(0, len(problems_in_rating_range) - 1)]
+
+    problem.set_solutions(mysql)
+    problem.game_moves = GameMove.get_by_game(mysql, problem.game_id)
+
+    mysql.commit_and_close()
+
+    return {
+        "id": problem.id,
+        "move_number": problem.move_number,
+        "rating": problem.rating,
+        "game_id": problem.game_id,
+        "game_title": problem.game_title,
+        "game_date": problem.game_date,
+        "game_moves": [{
+            "move_number": gm.move_number,
+            "move": gm.move
+        } for gm in problem.game_moves if gm.move_number < problem.move_number],
+        "solutions": [{
+            "move": row[0],
+            "winrate": row[1],
+            "score_lead": row[2]
+        } for row in problem.solutions]
+    }
+
+
 @app.route("/backend/make_attempt", methods=["POST"])
 @token_required
 def make_attempt(current_user):
@@ -212,6 +265,42 @@ def make_attempt(current_user):
             "score_lead": row[2]
         } for row in problem.solutions]
     }
+
+
+@app.route("/backend/make_attempt_anonymous", methods=["POST"])
+def make_attempt_anonymous():
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+    body = request.json
+
+    game_id = body["gameId"]
+    move_number = body["moveNumber"]
+    move = body["move"]
+
+    mysql.query("""
+        select p.id, p.rating, p.kfactor, g.title, g.date_played 
+        from problem p
+        join game g on g.id = p.game_id
+        where 
+            p.game_id = %s
+            and p.move_number = %s""", (game_id, move_number))
+    
+    result = mysql.cursor.fetchone()
+    problem = Problem(result[0], None, result[1], result[2], None, None, result[3], result[4])
+
+    problem.set_solutions(mysql)
+
+    success = False
+    for row in problem.solutions:
+        if move == row[0]:
+            success = True
+
+    mysql.query("insert into problem_attempt (problem_id, user_id, success) values (%s, null, %s)", (
+        problem.id,
+        1 if success else 0
+    ))
+
+    mysql.commit_and_close()
+    return Response("", 200)
 
 
 @app.route("/problems/<id>", methods=["GET"])

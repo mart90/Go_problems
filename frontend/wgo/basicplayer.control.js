@@ -429,16 +429,17 @@ Control.widgets = [ {
 					}.bind(this));
 				},
 				click: function(player) {
+					player.kifu.info = {};
+					
 					if (player.new_problem != null){
 						player.activateNewProblem();
 					}
 					else {
-						player.loadRandomProblem(player.activateNewProblem);
+						player.loadNewProblem(player.activateNewProblem);
 					}
 					player.unranked = false;
 					document.getElementById("feedbackImage").src = "";
 					document.getElementById("ratingChange").innerHTML = "";
-					player.kifu.info = {};
 
 					player.dispatchEvent({
 						type: "solutionUnloaded",

@@ -249,25 +249,44 @@ Player.prototype = {
 	},
 
 	initGame: function() {
-		var ratingCall = $.ajax({
-			type: "GET",
-			url: server_address + "backend/get_current_rating",
-			beforeSend: function (xhr) {
-				xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
-			}
-		});
-	
-		ratingCall.done(function (result){
-			document.getElementById("currentRating").innerHTML = Math.round(result);
-		});
+		var token = localStorage.getItem('token');
+		if (!token || token == "undefined") {
+			this.anonymous = true;
+			this.loadNewProblemAnonymous(this.activateNewProblem);
 
-		if (this.config.problemId) {
-			// We're loading a specific problem
-			this.unranked = true;
-			this.loadProblem(this.config.problemId, this.activateNewProblem);
+			this.anon_rating = localStorage.getItem("anon_rating");
+			this.anon_kfactor = localStorage.getItem("anon_kfactor");
+
+			if (this.anon_rating == null) {
+				localStorage.setItem("anon_rating", 1700);
+				localStorage.setItem("anon_kfactor", 200);
+				this.anon_rating = 1700;
+				this.anon_kfactor = 200;
+			}
+
+			document.getElementById("currentRating").innerHTML = Math.round(this.anon_rating);
 		}
 		else {
-			this.loadRandomProblem(this.activateNewProblem);
+			var ratingCall = $.ajax({
+				type: "GET",
+				url: server_address + "backend/get_current_rating",
+				beforeSend: function (xhr) {
+					xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+				}
+			});
+		
+			ratingCall.done(function (result){
+				document.getElementById("currentRating").innerHTML = Math.round(result);
+			});
+
+			if (this.config.problemId) {
+				// We're loading a specific problem
+				this.unranked = true;
+				this.loadProblem(this.config.problemId, this.activateNewProblem);
+			}
+			else {
+				this.loadNewProblem(this.activateNewProblem);
+			}
 		}
 	},
 
@@ -374,7 +393,7 @@ Player.prototype = {
 		});
 	},
 
-	loadRandomProblem: function (callback) {	
+	loadNewProblem: function (callback) {	
 		var expires_at = new Date(localStorage.getItem('token_expires_at'));
 		var current_date = new Date();
 		expires_at.setMinutes(expires_at.getHours() - 23);
@@ -419,6 +438,65 @@ Player.prototype = {
 			}
 
 			problem.kifu = kifu;
+			player.new_problem = problem;
+
+			player.dispatchEvent({
+				type: "problemLoaded",
+				target: player,
+				kifu: player.kifu,
+			});
+
+			if (callback) {
+				callback.call(player);
+			}
+		});
+	},
+
+	loadNewProblemAnonymous: function(callback) {
+		var player = this;
+
+		var newProblemCall = $.ajax({ 
+			type: "POST",
+			contentType: "application/json",
+			url: server_address + "backend/get_new_problem_anonymous",
+			data: JSON.stringify({
+				rating: localStorage.getItem("anon_rating")
+			})
+		});
+
+		newProblemCall.done(function (problem) {
+			var kifu = new WGo.Kifu();
+			kifu.nodeCount = 0;
+			var node = kifu.root;
+			var c = 1;
+
+			for (var mn = 0; mn < problem.game_moves.length; mn++) {
+				if (mn == problem.move_number) {
+					break;
+				}
+				var move = problem.game_moves[mn]
+				var newNode = new WGo.KNode();
+				newNode.parent = node;
+
+				var xyMove = player.StringMoveToXy(move.move);
+				xyMove.c = c;
+				newNode.move = xyMove;
+
+				node.appendChild(newNode);
+				kifu.nodeCount++;
+				node = newNode;
+
+				c *= -1
+			}
+
+			problem.kifu = kifu;
+			problem.kifu.info = {
+				problem_id: problem.id,
+				problem_rating: Math.round(problem.rating),
+				problem_from_game: problem.game_title,
+				problem_game_date: new Date(problem.game_date).toDateString()
+			};
+
 			player.new_problem = problem;
 
 			player.dispatchEvent({
@@ -760,7 +838,10 @@ Player.default = {
 	ignore_attempts: false,
 	new_problem: {},
 	unranked: false,
-	problem_solutions: []
+	anonymous: false,
+	problem_solutions: [],
+	anon_rating: 1700,
+	anon_kfactor: 200
 }
 
 WGo.Player = Player;
@@ -772,11 +853,6 @@ WGo.Player = Player;
  */
 
 var player_terms = {
-	"about-text": "<h1>WGo.js Player 2.0</h1>"
-				+ "<p>WGo.js Player is extension of WGo.js, HTML5 library for purposes of game of go. It allows to replay go game records and it has many features like score counting. It is also designed to be easily extendable.</p>"
-				+ "<p>WGo.js is open source licensed under <a href='http://en.wikipedia.org/wiki/MIT_License' target='_blank'>MIT license</a>. You can use and modify any code from this project.</p>"
-				+ "<p>You can find more information at <a href='http://wgo.waltheri.net/player' target='_blank'>wgo.waltheri.net/player</a></p>"
-				+ "<p>Copyright &copy; 2013 Jan Prokop</p>",
 	"black": "Black",
 	"white": "White",
 	"DT": "Date",

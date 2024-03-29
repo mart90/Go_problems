@@ -69,7 +69,7 @@ var make_attempt = function (player, x, y) {
 	});
 
 	makeAttemptCall.done(function (result) {
-		player.loadRandomProblem();
+		player.loadNewProblem();
 		
 		var maxWinrate = Math.max(...result.solutions.map(e => e.winrate))
 		var bestSolution = result.solutions.find(e => e.winrate == maxWinrate)
@@ -159,11 +159,22 @@ var make_attempt = function (player, x, y) {
 	});
 }
 
-var make_attempt_unranked = function (player, x, y) {
+var make_attempt_anonymous = function (player, x, y) {	
 	var move = player.XyToStringMove(x, y);
 	var solved = false;
 	
-	player.loadRandomProblem();
+	player.loadNewProblemAnonymous();
+
+	$.ajax({ 
+		type: "POST",
+		contentType: "application/json",
+		url: server_address + "backend/make_attempt_anonymous",
+		data: JSON.stringify({
+			gameId: player.problem.game_id,
+			moveNumber: player.problem.move_number,
+			move: move
+		})
+	});
 		
 	var maxWinrate = Math.max(...player.problem.solutions.map(e => e.winrate))
 	var bestSolution = player.problem.solutions.find(e => e.winrate == maxWinrate)
@@ -195,19 +206,95 @@ var make_attempt_unranked = function (player, x, y) {
 				winrate: 0,
 				score_lead: 0
 			});
-		}			
-		// There are currently no problems with multiple solutions. Keeping this here for a potential future where they are added
+		}
+	}
 
-		// else if (solution.winrate > 0 && solution.winrate != maxWinrate) {
-		// 	solutionMove.type = "additionalSolution";
-		// 	player.board.addObject(solutionMove);
-		// 	player.board.solutions.push({
-		// 		x: solutionMove.x,
-		// 		y: solutionMove.y,
-		// 		winrate: solution.winrate,
-		// 		score_lead: solution.score_lead
-		// 	})
-		// }
+	if (solved) {
+		player.kifuReader.node.appendChild(new WGo.KNode({
+			move: {
+				x: x, 
+				y: y, 
+				c: player.kifuReader.game.turn
+			}, 
+			_edited: true
+		}));
+		player.next(player.kifuReader.node.children.length-1);
+	}
+	else {
+		player.board.addObject({
+			type: "wrongAnswer",
+			x: x,
+			y: y
+		})
+	}
+
+	var imgFilename = solved ? "correct.png" : "wrong.png";
+	document.getElementById("feedbackImage").src = WGo.DIR + "textures/" + imgFilename;
+
+	var win_int = solved ? 1 : 0;
+	var rating_change = parseFloat(player.anon_kfactor) * (win_int - (1 / (1 + Math.pow(10, (parseFloat(player.problem.rating) - parseFloat(player.anon_rating)) / 400.0))));
+
+	player.anon_rating = parseFloat(player.anon_rating) + rating_change;
+
+	document.getElementById("currentRating").innerHTML = Math.round(player.anon_rating);
+
+	var plus = rating_change > 0 ? "+" : "";
+
+	document.getElementById("ratingChange").innerHTML = "(" + plus + Math.round(rating_change * 10) / 10 + ")";
+
+	if (player.anon_kfactor > 25) {
+		player.anon_kfactor -= 2;
+	}
+
+	localStorage.setItem("anon_rating", player.anon_rating)
+	localStorage.setItem("anon_kfactor", player.anon_kfactor)
+
+	player.dispatchEvent({
+		type: "solutionLoaded",
+		target: player,
+		kifu: player.kifu,
+	});
+
+	player.board.redraw();
+}
+
+var make_attempt_unranked = function (player, x, y) {
+	var move = player.XyToStringMove(x, y);
+	var solved = false;
+	
+	player.loadNewProblem();
+		
+	var maxWinrate = Math.max(...player.problem.solutions.map(e => e.winrate))
+	var bestSolution = player.problem.solutions.find(e => e.winrate == maxWinrate)
+	player.board.solutions = [];
+
+	for (solution of player.problem.solutions){
+		var solutionMove = player.StringMoveToXy(solution.move);
+
+		if (solution.move == move){
+			solved = true;
+		}
+
+		if (solution.winrate == maxWinrate){
+			solutionMove.type = "aiMove";
+			player.board.addObject(solutionMove);
+			player.board.solutions.push({
+				x: solutionMove.x,
+				y: solutionMove.y,
+				winrate: solution.winrate,
+				score_lead: solution.score_lead
+			});
+		}
+		else if (solution.winrate == 0 && bestSolution.move != solution.move) {
+			solutionMove.type = "proMove";
+			player.board.addObject(solutionMove);
+			player.board.solutions.push({
+				x: solutionMove.x,
+				y: solutionMove.y,
+				winrate: 0,
+				score_lead: 0
+			});
+		}
 	}
 
 	if (solved) {
@@ -286,6 +373,9 @@ WGo.Player.Editable.prototype.play = function(x,y) {
 
 	if (player.unranked) {
 		make_attempt_unranked(player, x, y);
+	}
+	else if (player.anonymous) {
+		make_attempt_anonymous(player, x, y);
 	}
 	else {
 		make_attempt(player, x, y);

@@ -4,21 +4,6 @@
 	<meta charset="utf-8">
 	<title>Real Go problems</title>
 	<script src="wgo/serverAddress.js"></script>
-	<script>
-		var anon = localStore.getItem('anon');
-		if (!anon) {
-			var token = localStorage.getItem('token');
-			if (!token || token == "undefined") {
-				window.location.href = server_address + "login.html";
-			}
-			
-			var expires_at = new Date(localStorage.getItem('token_expires_at'));
-			var current_date = new Date();
-			if (current_date > expires_at){
-				window.location.href = server_address + "login.html";
-			}
-		}
-	</script>
 	<script src="wgo/wgo.js"></script>
 	<script src="wgo/kifu.js"></script>
 	<script src="wgo/player.js"></script>
