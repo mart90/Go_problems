@@ -460,7 +460,7 @@ Player.prototype = {
 			contentType: "application/json",
 			url: server_address + "backend/get_new_problem_anonymous",
 			data: JSON.stringify({
-				rating: localStorage.getItem("anon_rating")
+				rating: localStorage.getItem("anon_rating") ?? 1700
 			})
 		});
 
