@@ -220,6 +220,10 @@ control.Button = WGo.extendClass(control.Clickable, function(player, args) {
 		elem.innerHTML = args.text;
 	}
 	
+	if (args.id) {
+		this.element.id = args.id;
+	}
+	
 	this.init(player, args);
 });
 
@@ -430,7 +434,7 @@ Control.widgets = [ {
 				},
 				click: function(player) {
 					player.kifu.info = {};
-					
+
 					if (player.new_problem != null){
 						player.activateNewProblem();
 					}
@@ -467,6 +471,8 @@ Control.widgets = [ {
 				click: function(player) { 
 					player.first();
 					player.ignore_attempts = true;
+					player.removeSolutionsFromBoard();
+					player.enableNextButtons();
 				},
 			}
 		}, {
@@ -485,6 +491,14 @@ Control.widgets = [ {
 					p.m -= 10; 
 					player.goTo(p);
 					player.ignore_attempts = true;
+
+					if (player.atSolutionNode()) {
+						player.addSolutions();
+					}
+					else {
+						player.removeSolutionsFromBoard();
+					}
+					player.enableNextButtons();
 				},
 			}
 		},{
@@ -498,9 +512,8 @@ Control.widgets = [ {
 					player.addEventListener("frozen", but_frozen.bind(this));
 					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
-				click: function(player) { 
+				click: function(player) {
 					player.previous();
-					player.ignore_attempts = true;
 				},
 			}
 		}, {
@@ -508,6 +521,7 @@ Control.widgets = [ {
 		}, {
 			constructor: control.Button,
 			args: {
+				id: "kifu-next",
 				name: "next",
 				disabled: true,
 				multiple: true,
@@ -518,12 +532,12 @@ Control.widgets = [ {
 				},
 				click: function(player) {
 					player.next();
-					player.enableAttemptsMaybe();
 				},
 			}
 		}, {
 			constructor: control.Button,
 			args: {
+				id: "kifu-multinext",
 				name: "multinext",
 				disabled: true,
 				multiple: true,
@@ -534,14 +548,31 @@ Control.widgets = [ {
 				},
 				click: function(player) { 
 					var p = WGo.clone(player.kifuReader.path);
-					p.m += 10; 
+					p.m += 10;
+
+					if (player.board.solutions.length == 0 && p.m > player.problem.move_number) {
+						p.m = player.problem.move_number;
+					}
+
 					player.goTo(p);					
 					player.enableAttemptsMaybe();
+
+					if (player.board.solutions.length == 0 && player.currentMoveNumber() >= player.problem.move_number) {
+						player.disableNextButtons();
+					}
+
+					if (player.atSolutionNode()) {
+						player.addSolutions();
+					}
+					else {
+						player.removeSolutionsFromBoard();
+					}
 				},
 			}
 		}, {
 			constructor: control.Button,
 			args: {
+				id: "kifu-last",
 				name: "last",
 				disabled: true,
 				init: function(player) {
@@ -550,8 +581,18 @@ Control.widgets = [ {
 					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
 				click: function(player) {
-					player.last();
-					player.enableAttemptsMaybe();
+					if (player.board.solutions.length == 0) {		
+						var p = WGo.clone(player.kifuReader.path);
+						p.m = player.problem.move_number;
+						player.goTo(p);
+						player.enableAttemptsMaybe();
+						player.disableNextButtons();
+					}					
+					else {
+						player.last();
+					}
+					
+					player.removeSolutionsFromBoard();
 				},
 			}
 		}]

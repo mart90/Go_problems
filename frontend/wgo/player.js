@@ -175,7 +175,7 @@ var key_lis = function(e) {
 
 // function handling board clicks in normal mode
 var board_click_default = function(x,y) {
-	if(!this.kifuReader || !this.kifuReader.node) return false;
+	if(!this.kifuReader || !this.kifuReader.node || this.problem.move_number == this.kifuReader.path.m) return false;
 	for(var i in this.kifuReader.node.children) {
 		if(this.kifuReader.node.children[i].move && this.kifuReader.node.children[i].move.x == x && this.kifuReader.node.children[i].move.y == y) {
 			this.next(i);
@@ -315,7 +315,7 @@ Player.prototype = {
 	},
 
 	enableAttemptsMaybe: function() {
-		if (this.board.solutions.length === 0 && this.kifuReader.path.m == this.kifuReader.kifu.nodeCount){
+		if (this.board.solutions.length === 0 && this.kifuReader.path.m == this.problem.move_number){
 			this.ignore_attempts = false;
 		}
 	},
@@ -353,9 +353,6 @@ Player.prototype = {
 			var c = 1;
 
 			for (var mn = 0; mn < problem.game_moves.length; mn++) {
-				if (mn == problem.move_number) {
-					break;
-				}
 				var move = problem.game_moves[mn]
 				var newNode = new WGo.KNode();
 				newNode.parent = node;
@@ -419,9 +416,6 @@ Player.prototype = {
 			var c = 1;
 
 			for (var mn = 0; mn < problem.game_moves.length; mn++) {
-				if (mn == problem.move_number) {
-					break;
-				}
 				var move = problem.game_moves[mn]
 				var newNode = new WGo.KNode();
 				newNode.parent = node;
@@ -471,9 +465,6 @@ Player.prototype = {
 			var c = 1;
 
 			for (var mn = 0; mn < problem.game_moves.length; mn++) {
-				if (mn == problem.move_number) {
-					break;
-				}
 				var move = problem.game_moves[mn]
 				var newNode = new WGo.KNode();
 				newNode.parent = node;
@@ -520,7 +511,7 @@ Player.prototype = {
 		player.new_problem = null;
 
 		// kifu is replayed by KifuReader, it manipulates a Kifu object and gets all changes
-		player.kifuReader = new WGo.KifuReader(player.kifu, false, false);
+		player.kifuReader = new WGo.KifuReader(player.kifu, false, false);		
 
 		// fire kifu loaded event
 		player.dispatchEvent({
@@ -538,11 +529,91 @@ Player.prototype = {
 		// update player - initial position in kifu doesn't have to be an empty board
 		player.update("init");
 
-		player.last();
+		var p = WGo.clone(player.kifuReader.path);
+		p.m = player.problem.move_number;
+		player.goTo(p);
 
 		player.ignore_attempts = false;
+		player.disableNextButtons();
+
 		player._editable = new WGo.Player.Editable(player, player.board);
 		player._editable.set();
+	},
+
+	addSolutions: function(solutions) {
+		var player = this;
+		solutions = solutions || player.problem.solutions;
+		player.problem.solutions = solutions;
+
+		var maxWinrate = Math.max(...solutions.map(e => e.winrate))
+		var bestSolution = solutions.find(e => e.winrate == maxWinrate)
+		player.board.solutions = [];
+
+		for (var solution of solutions){
+			var solutionMove = player.StringMoveToXy(solution.move);
+	
+			if (solution.winrate == maxWinrate){
+				solutionMove.type = "aiMove";
+				player.board.addObject(solutionMove);
+				player.board.solutions.push({
+					x: solutionMove.x,
+					y: solutionMove.y,
+					winrate: solution.winrate,
+					score_lead: solution.score_lead
+				});
+			}
+			else if (solution.winrate == 0 && bestSolution.move != solution.move) {
+				solutionMove.type = "proMove";
+				player.board.addObject(solutionMove);
+				player.board.solutions.push({
+					x: solutionMove.x,
+					y: solutionMove.y,
+					winrate: 0,
+					score_lead: 0
+				});
+			}
+		}
+		
+		player.board.redraw();
+	},
+
+	removeSolutionsFromBoard: function() {
+		for (var x = 0; x < 19; x++) {
+			for (var y = 0; y < 19; y++) {
+				var objects = this.board.obj_arr[x][y];
+				for (var obj of objects) {
+					if (obj.type == "aiMove"
+						|| obj.type == "proMove"
+						|| obj.type == "wrongAnswer") {
+						this.board.removeObject(obj);
+					}
+				}
+			}
+		}
+	},
+
+	atProblemNode: function() {
+		return this.problem.move_number == this.kifuReader.path.m;
+	},
+
+	atSolutionNode: function() {
+		return this.problem.move_number + 1 == this.kifuReader.path.m;
+	},
+
+	currentMoveNumber: function() {
+		return this.kifuReader.path.m;
+	},
+
+	enableNextButtons: function () {
+		document.getElementById("kifu-next").disabled = false;
+		document.getElementById("kifu-multinext").disabled = false;
+		document.getElementById("kifu-last").disabled = false;
+	},
+	
+	disableNextButtons: function() {
+		document.getElementById("kifu-next").disabled = true;
+		document.getElementById("kifu-multinext").disabled = true;
+		document.getElementById("kifu-last").disabled = true;
 	},
 
 	/**
@@ -618,11 +689,28 @@ Player.prototype = {
 	 */
 
 	next: function(i) {
-		if(this.frozen || !this.kifu) return;
+		if (this.frozen || !this.kifu) return;
+
+		if (this.atProblemNode() && !this.ignore_attempts) {
+			return;
+		}
 
 		try {
 			this.kifuReader.next(i);
 			this.update();
+			
+			this.enableAttemptsMaybe();
+
+			if (this.board.solutions.length == 0 && this.currentMoveNumber() == this.problem.move_number) {
+				this.disableNextButtons();
+			}
+
+			if (this.atSolutionNode()) {
+				this.addSolutions();
+			}
+			else if (this.currentMoveNumber() == this.problem.move_number + 2) {
+				this.removeSolutionsFromBoard();
+			}
 		}
 		catch(err) {
 			this.error(err);
@@ -634,11 +722,22 @@ Player.prototype = {
 	 */
 
 	previous: function() {
-		if(this.frozen || !this.kifu) return;
+		if (this.frozen || !this.kifu) return;
 
-		try{
+		try {
+			if (this.atSolutionNode() || this.atProblemNode()) {
+				this.removeSolutionsFromBoard();
+			}
+
 			this.kifuReader.previous();
 			this.update();
+
+			if (this.atSolutionNode()) {
+				this.addSolutions();
+			}
+			
+			this.ignore_attempts = true;
+			this.enableNextButtons();
 		}
 		catch(err) {
 			this.error(err);
@@ -839,7 +938,6 @@ Player.default = {
 	new_problem: {},
 	unranked: false,
 	anonymous: false,
-	problem_solutions: [],
 	anon_rating: 1700,
 	anon_kfactor: 200
 }
