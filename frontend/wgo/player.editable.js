@@ -253,6 +253,8 @@ var make_attempt_unranked = function (player, x, y) {
 	});
 
 	player.board.redraw();
+	
+	player.enableNextButtons();
 }
 
 WGo.Player.Editable = {};
