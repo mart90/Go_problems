@@ -111,12 +111,15 @@ def get_new_problem(current_user):
         group by p.id
         union
         select p.id, p.game_id, p.rating, p.kfactor, p.move_number, 0 as attempts
-        from problem p
-        where %s not in (select user_id from problem_attempt pa where p.id = pa.problem_id)""", (current_user.id, current_user.id))
+        from problem p""", (current_user.id))
 
     result = mysql.cursor.fetchall()
 
     problems = [Problem(row[0], row[1], row[2], row[3], row[4], row[5]) for row in result]
+
+    problem_ids_attempted = [p.id for p in problems if p.attempts > 0]
+    problems = [p for p in problems if p.id not in problem_ids_attempted or p.attempts > 0]
+
     problems_min_attempts = [p for p in problems if p.attempts == min([pr.attempts for pr in problems])]
     problems_in_rating_range = [p for p in problems_min_attempts if current_user.rating + 200 > p.rating > current_user.rating - 200]
 
