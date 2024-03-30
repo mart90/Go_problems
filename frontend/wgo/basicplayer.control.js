@@ -8,6 +8,18 @@ var compare_widgets = function(a,b) {
 	else return 0;
 }
 
+var enableNextButtons = function () {
+	document.getElementById("kifu-next").disabled = false;
+	document.getElementById("kifu-multinext").disabled = false;
+	document.getElementById("kifu-last").disabled = false;
+}
+
+var disableNextButtons = function() {
+	document.getElementById("kifu-next").disabled = true;
+	document.getElementById("kifu-multinext").disabled = true;
+	document.getElementById("kifu-last").disabled = true;
+}
+
 var prepare_dom = function(player) {
 	this.iconBar = document.createElement("div");
 	this.iconBar.className = "wgo-control-wrapper";
@@ -220,6 +232,10 @@ control.Button = WGo.extendClass(control.Clickable, function(player, args) {
 		elem.innerHTML = args.text;
 	}
 	
+	if (args.id) {
+		this.element.id = args.id;
+	}
+	
 	this.init(player, args);
 });
 
@@ -430,7 +446,7 @@ Control.widgets = [ {
 				},
 				click: function(player) {
 					player.kifu.info = {};
-					
+
 					if (player.new_problem != null){
 						player.activateNewProblem();
 					}
@@ -467,6 +483,8 @@ Control.widgets = [ {
 				click: function(player) { 
 					player.first();
 					player.ignore_attempts = true;
+					player.removeSolutionsFromBoard();
+					enableNextButtons();
 				},
 			}
 		}, {
@@ -485,6 +503,14 @@ Control.widgets = [ {
 					p.m -= 10; 
 					player.goTo(p);
 					player.ignore_attempts = true;
+
+					if (player.atSolutionNode()) {
+						player.addSolutions();
+					}
+					else {
+						player.removeSolutionsFromBoard();
+					}
+					enableNextButtons();
 				},
 			}
 		},{
@@ -499,8 +525,18 @@ Control.widgets = [ {
 					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
 				click: function(player) { 
+					if (player.atSolutionNode()) {
+						player.removeSolutionsFromBoard();
+					}
+
 					player.previous();
+
+					if (player.atSolutionNode()) {
+						player.addSolutions();
+					}
+					
 					player.ignore_attempts = true;
+					enableNextButtons();
 				},
 			}
 		}, {
@@ -508,6 +544,7 @@ Control.widgets = [ {
 		}, {
 			constructor: control.Button,
 			args: {
+				id: "kifu-next",
 				name: "next",
 				disabled: true,
 				multiple: true,
@@ -519,11 +556,23 @@ Control.widgets = [ {
 				click: function(player) {
 					player.next();
 					player.enableAttemptsMaybe();
+
+					if (player.board.solutions.length == 0 && player.currentMoveNumber() == player.problem.move_number) {
+						disableNextButtons();
+					}
+
+					if (player.atSolutionNode()) {
+						player.addSolutions();
+					}
+					else if (player.currentMoveNumber() == player.problem.move_number + 2) {
+						player.removeSolutionsFromBoard();
+					}
 				},
 			}
 		}, {
 			constructor: control.Button,
 			args: {
+				id: "kifu-multinext",
 				name: "multinext",
 				disabled: true,
 				multiple: true,
@@ -534,14 +583,31 @@ Control.widgets = [ {
 				},
 				click: function(player) { 
 					var p = WGo.clone(player.kifuReader.path);
-					p.m += 10; 
+					p.m += 10;
+
+					if (player.board.solutions.length == 0 && p.m > player.problem.move_number) {
+						p.m = player.problem.move_number;
+					}
+
 					player.goTo(p);					
 					player.enableAttemptsMaybe();
+
+					if (player.board.solutions.length == 0 && player.currentMoveNumber() >= player.problem.move_number) {
+						disableNextButtons();
+					}
+
+					if (player.atSolutionNode()) {
+						player.addSolutions();
+					}
+					else {
+						player.removeSolutionsFromBoard();
+					}
 				},
 			}
 		}, {
 			constructor: control.Button,
 			args: {
+				id: "kifu-last",
 				name: "last",
 				disabled: true,
 				init: function(player) {
@@ -550,8 +616,18 @@ Control.widgets = [ {
 					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
 				click: function(player) {
-					player.last();
-					player.enableAttemptsMaybe();
+					if (player.board.solutions.length == 0) {		
+						var p = WGo.clone(player.kifuReader.path);
+						p.m = player.problem.move_number;
+						player.goTo(p);
+						player.enableAttemptsMaybe();
+						disableNextButtons();
+					}					
+					else {
+						player.last();
+					}
+					
+					player.removeSolutionsFromBoard();
 				},
 			}
 		}]

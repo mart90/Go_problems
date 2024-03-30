@@ -126,8 +126,6 @@ def get_new_problem(current_user):
             problems_in_rating_range = problems
 
     problem = problems_in_rating_range[random.randint(0, len(problems_in_rating_range) - 1)]
-    #problem = problems_in_rating_range[0]
-    #problem = [p for p in problems if p.id == 1572][0]
 
     problem.game_moves = GameMove.get_by_game(mysql, problem.game_id)
 
@@ -141,7 +139,7 @@ def get_new_problem(current_user):
         "game_moves": [{
             "move_number": gm.move_number,
             "move": gm.move
-        } for gm in problem.game_moves if gm.move_number < problem.move_number]
+        } for gm in problem.game_moves]
     }
 
 
@@ -189,7 +187,7 @@ def get_new_problem_anonymous():
         "game_moves": [{
             "move_number": gm.move_number,
             "move": gm.move
-        } for gm in problem.game_moves if gm.move_number < problem.move_number],
+        } for gm in problem.game_moves],
         "solutions": [{
             "move": row[0],
             "winrate": row[1],
@@ -240,9 +238,10 @@ def make_attempt(current_user):
     current_user.update_rating(mysql)
     problem.update_rating(mysql)
 
-    mysql.query("insert into problem_attempt (problem_id, user_id, success, user_new_rating, problem_new_rating) values (%s, %s, %s, %s, %s)", (
+    mysql.query("insert into problem_attempt (problem_id, user_id, move, success, user_new_rating, problem_new_rating) values (%s, %s, %s, %s, %s, %s)", (
         problem.id,
         current_user.id,
+        move,
         1 if success else 0,
         current_user.rating,
         problem.rating
@@ -294,8 +293,9 @@ def make_attempt_anonymous():
         if move == row[0]:
             success = True
 
-    mysql.query("insert into problem_attempt (problem_id, user_id, success) values (%s, null, %s)", (
+    mysql.query("insert into problem_attempt (problem_id, user_id, move, success) values (%s, null, %s, %s)", (
         problem.id,
+        move,
         1 if success else 0
     ))
 
@@ -347,7 +347,7 @@ def get_problem_by_id(current_user, id):
         "game_moves": [{
             "move_number": gm.move_number,
             "move": gm.move
-        } for gm in problem.game_moves if gm.move_number < problem.move_number],
+        } for gm in problem.game_moves],
         "solutions": [{
             "move": row[0],
             "winrate": row[1],

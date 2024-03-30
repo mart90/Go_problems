@@ -738,7 +738,7 @@ Board.drawHandlers = {
 
 				var user_played_here = false;
 				
-				for (solution of board.solutions){
+				for (var solution of board.solutions){
 					if (board.obj_arr[args.x][args.y][0].c == WGo.B
 						&& args.x == solution.x
 						&& args.y == solution.y) {
@@ -2117,9 +2117,7 @@ Game.prototype = {
 			return 4;
 		}
 
-		if(noplay) return false;
-
-		
+		if(noplay) return false;		
 
 		// update position info
 		new_pos.color = c;
