@@ -8,18 +8,6 @@ var compare_widgets = function(a,b) {
 	else return 0;
 }
 
-var enableNextButtons = function () {
-	document.getElementById("kifu-next").disabled = false;
-	document.getElementById("kifu-multinext").disabled = false;
-	document.getElementById("kifu-last").disabled = false;
-}
-
-var disableNextButtons = function() {
-	document.getElementById("kifu-next").disabled = true;
-	document.getElementById("kifu-multinext").disabled = true;
-	document.getElementById("kifu-last").disabled = true;
-}
-
 var prepare_dom = function(player) {
 	this.iconBar = document.createElement("div");
 	this.iconBar.className = "wgo-control-wrapper";
@@ -484,7 +472,7 @@ Control.widgets = [ {
 					player.first();
 					player.ignore_attempts = true;
 					player.removeSolutionsFromBoard();
-					enableNextButtons();
+					player.enableNextButtons();
 				},
 			}
 		}, {
@@ -510,7 +498,7 @@ Control.widgets = [ {
 					else {
 						player.removeSolutionsFromBoard();
 					}
-					enableNextButtons();
+					player.enableNextButtons();
 				},
 			}
 		},{
@@ -524,19 +512,8 @@ Control.widgets = [ {
 					player.addEventListener("frozen", but_frozen.bind(this));
 					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
-				click: function(player) { 
-					if (player.atSolutionNode()) {
-						player.removeSolutionsFromBoard();
-					}
-
+				click: function(player) {
 					player.previous();
-
-					if (player.atSolutionNode()) {
-						player.addSolutions();
-					}
-					
-					player.ignore_attempts = true;
-					enableNextButtons();
 				},
 			}
 		}, {
@@ -555,18 +532,6 @@ Control.widgets = [ {
 				},
 				click: function(player) {
 					player.next();
-					player.enableAttemptsMaybe();
-
-					if (player.board.solutions.length == 0 && player.currentMoveNumber() == player.problem.move_number) {
-						disableNextButtons();
-					}
-
-					if (player.atSolutionNode()) {
-						player.addSolutions();
-					}
-					else if (player.currentMoveNumber() == player.problem.move_number + 2) {
-						player.removeSolutionsFromBoard();
-					}
 				},
 			}
 		}, {
@@ -593,7 +558,7 @@ Control.widgets = [ {
 					player.enableAttemptsMaybe();
 
 					if (player.board.solutions.length == 0 && player.currentMoveNumber() >= player.problem.move_number) {
-						disableNextButtons();
+						player.disableNextButtons();
 					}
 
 					if (player.atSolutionNode()) {
@@ -621,7 +586,7 @@ Control.widgets = [ {
 						p.m = player.problem.move_number;
 						player.goTo(p);
 						player.enableAttemptsMaybe();
-						disableNextButtons();
+						player.disableNextButtons();
 					}					
 					else {
 						player.last();

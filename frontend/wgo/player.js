@@ -534,18 +534,22 @@ Player.prototype = {
 		player.goTo(p);
 
 		player.ignore_attempts = false;
+		player.disableNextButtons();
+
 		player._editable = new WGo.Player.Editable(player, player.board);
 		player._editable.set();
 	},
 
-	addSolutions: function() {
+	addSolutions: function(solutions) {
 		var player = this;
+		solutions = solutions || player.problem.solutions;
+		player.problem.solutions = solutions;
 
-		var maxWinrate = Math.max(...player.problem.solutions.map(e => e.winrate))
-		var bestSolution = player.problem.solutions.find(e => e.winrate == maxWinrate)
+		var maxWinrate = Math.max(...solutions.map(e => e.winrate))
+		var bestSolution = solutions.find(e => e.winrate == maxWinrate)
 		player.board.solutions = [];
 
-		for (var solution of player.problem.solutions){
+		for (var solution of solutions){
 			var solutionMove = player.StringMoveToXy(solution.move);
 	
 			if (solution.winrate == maxWinrate){
@@ -588,12 +592,28 @@ Player.prototype = {
 		}
 	},
 
+	atProblemNode: function() {
+		return this.problem.move_number == this.kifuReader.path.m;
+	},
+
 	atSolutionNode: function() {
 		return this.problem.move_number + 1 == this.kifuReader.path.m;
 	},
 
 	currentMoveNumber: function() {
 		return this.kifuReader.path.m;
+	},
+
+	enableNextButtons: function () {
+		document.getElementById("kifu-next").disabled = false;
+		document.getElementById("kifu-multinext").disabled = false;
+		document.getElementById("kifu-last").disabled = false;
+	},
+	
+	disableNextButtons: function() {
+		document.getElementById("kifu-next").disabled = true;
+		document.getElementById("kifu-multinext").disabled = true;
+		document.getElementById("kifu-last").disabled = true;
 	},
 
 	/**
@@ -669,11 +689,28 @@ Player.prototype = {
 	 */
 
 	next: function(i) {
-		if(this.frozen || !this.kifu) return;
+		if (this.frozen || !this.kifu) return;
+
+		if (this.atProblemNode() && !this.ignore_attempts) {
+			return;
+		}
 
 		try {
 			this.kifuReader.next(i);
 			this.update();
+			
+			this.enableAttemptsMaybe();
+
+			if (this.board.solutions.length == 0 && this.currentMoveNumber() == this.problem.move_number) {
+				this.disableNextButtons();
+			}
+
+			if (this.atSolutionNode()) {
+				this.addSolutions();
+			}
+			else if (this.currentMoveNumber() == this.problem.move_number + 2) {
+				this.removeSolutionsFromBoard();
+			}
 		}
 		catch(err) {
 			this.error(err);
@@ -685,11 +722,22 @@ Player.prototype = {
 	 */
 
 	previous: function() {
-		if(this.frozen || !this.kifu) return;
+		if (this.frozen || !this.kifu) return;
 
-		try{
+		try {
+			if (this.atSolutionNode() || this.atProblemNode()) {
+				this.removeSolutionsFromBoard();
+			}
+
 			this.kifuReader.previous();
 			this.update();
+
+			if (this.atSolutionNode()) {
+				this.addSolutions();
+			}
+			
+			this.ignore_attempts = true;
+			this.enableNextButtons();
 		}
 		catch(err) {
 			this.error(err);

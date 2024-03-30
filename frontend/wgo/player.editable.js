@@ -71,7 +71,7 @@ var make_attempt = function (player, x, y) {
 	makeAttemptCall.done(function (result) {
 		player.loadNewProblem();
 		
-		player.addSolutions();
+		player.addSolutions(result.solutions);
 
 		var nextMove = player.kifuReader.node.children[0].move;
 
@@ -121,6 +121,8 @@ var make_attempt = function (player, x, y) {
 		});
 
 		player.board.redraw();
+
+		player.enableNextButtons();
 	});
 }
 
@@ -200,6 +202,8 @@ var make_attempt_anonymous = function (player, x, y) {
 	});
 
 	player.board.redraw();
+	
+	player.enableNextButtons();
 }
 
 var make_attempt_unranked = function (player, x, y) {
