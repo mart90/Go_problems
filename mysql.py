@@ -4,8 +4,8 @@ import os
 from config import config
 
 
-mysql_ip = "192.168.1.202" if os.name == "nt" else "localhost"
-mysql_db = "go_problems_dev" if os.name == "nt" else "go_problems"
+mysql_ip = config["mysql_address"]
+mysql_db = config["mysql_db"]
 
 
 class MySQL(object):
