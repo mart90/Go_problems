@@ -66,6 +66,7 @@
 		
 			loginCall.done(function (loginResult) {
 				localStorage.setItem('token', loginResult.token)
+				localStorage.setItem('token_expires_at', loginResult.expires_at)
 				window.location.href = server_address + "player.html";
 			});
 		});
