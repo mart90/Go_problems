@@ -120,7 +120,7 @@ def get_new_problem(current_user):
     problem_ids_attempted = [p.id for p in problems if p.attempts > 0]
     problems = [p for p in problems if p.id not in problem_ids_attempted or p.attempts > 0]
 
-    problems = [p for p in problems if p.id == 1068]
+    #problems = [p for p in problems if p.id == 1068]
 
     problems_min_attempts = [p for p in problems if p.attempts == min([pr.attempts for pr in problems])]
     problems_in_rating_range = [p for p in problems_min_attempts if current_user.rating + 200 > p.rating > current_user.rating - 200]
@@ -161,7 +161,9 @@ def get_new_problem_anonymous():
             p.rating,
             p.move_number,
             g.title as game_title,
-            g.date_played as game_date_played
+            g.date_played as game_date_played,
+            p.user_rating,            
+            (select count(*) from problem_attempt pa where pa.problem_id = p.id) as total_attempts
         from problem p
         join game g on g.id = p.game_id""")
 
@@ -188,7 +190,9 @@ def get_new_problem_anonymous():
         "rating": problem.rating,
         "game_id": problem.game_id,
         "game_title": problem.game_title,
-        "game_date": problem.game_date,
+        "game_date": problem.game_date,        
+        "total_attempts": [row[7] for row in result if row[0] == problem.id][0],
+        "user_rating": [row[6] for row in result if row[0] == problem.id][0],
         "game_moves": [{
             "move_number": gm.move_number,
             "move": gm.move
