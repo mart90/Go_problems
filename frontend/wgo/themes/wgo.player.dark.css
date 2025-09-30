@@ -39,10 +39,45 @@
 	color: rgba(228,228,228,0.8);
 }
 
-a.wgo-move-link { 
-	text-decoration: none; 
-	border-bottom:1px dotted; 
+a.wgo-move-link {
+	text-decoration: none;
+	border-bottom:1px dotted;
 	color: white;
+}
+
+a.wgo-problem-link {
+	text-decoration: none;
+	border-bottom:1px dotted;
+	color: #5ba8f7;
+}
+
+a.wgo-problem-link:hover {
+	color: white;
+	text-decoration: underline;
+}
+
+/* Star rating styles */
+.wgo-rating-section {
+	margin-top: 10px !important;
+	border-top: 1px solid rgba(64,64,64,0.5);
+	padding-top: 8px !important;
+}
+
+.wgo-star-rating {
+	margin-top: 5px;
+}
+
+.wgo-star {
+	font-size: 18px;
+	color: rgba(255,255,255,0.3);
+	cursor: pointer;
+	margin-right: 2px;
+	transition: color 0.2s ease;
+	user-select: none;
+}
+
+.wgo-star:hover {
+	color: #FFD700 !important;
 }
 
 /* game info table */

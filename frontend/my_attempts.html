@@ -1,0 +1,316 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Real Go problems - My Attempts</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	<script src="wgo/serverAddress.js"></script>
+
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap">
+	<style>
+		body {
+			background-color: #101014;
+			font-family: 'Poppins', sans-serif;
+			color: #ffffff;
+			margin: 0;
+			padding: 20px;
+		}
+
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+			background-color: rgba(255,255,255,0.13);
+			border-radius: 10px;
+			backdrop-filter: blur(10px);
+			border: 2px solid rgba(255,255,255,0.1);
+			box-shadow: 0 0 40px rgba(8,7,16,0.6);
+			padding: 30px;
+		}
+
+		h1 {
+			text-align: center;
+			margin-bottom: 30px;
+			font-size: 32px;
+			font-weight: 500;
+		}
+
+		.back-button {
+			background-color: #ffffffa6;
+			color: #080710;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: 600;
+			margin-bottom: 20px;
+		}
+
+		.back-button:hover {
+			background-color: rgb(255, 255, 255);
+			box-shadow: 0 0 20px 0 rgba(150,150,150,0.5);
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-bottom: 20px;
+		}
+
+		th, td {
+			padding: 12px;
+			text-align: left;
+			border-bottom: 1px solid rgba(255,255,255,0.2);
+		}
+
+		th {
+			background-color: rgba(255,255,255,0.1);
+			font-weight: 600;
+			cursor: pointer;
+		}
+
+		th:hover {
+			background-color: rgba(255,255,255,0.15);
+		}
+
+		tr:hover {
+			background-color: rgba(255,255,255,0.05);
+		}
+
+		.problem-link {
+			color: #5ba8f7;
+			text-decoration: none;
+			cursor: pointer;
+		}
+
+		.problem-link:hover {
+			text-decoration: underline;
+		}
+
+		.success {
+			color: #4CAF50;
+			font-weight: 600;
+		}
+
+		.failure {
+			color: #f44336;
+			font-weight: 600;
+		}
+
+		.pagination {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 10px;
+			margin-top: 20px;
+		}
+
+		.pagination button {
+			background-color: #ffffffa6;
+			color: #080710;
+			border: none;
+			padding: 8px 12px;
+			border-radius: 5px;
+			cursor: pointer;
+			font-weight: 600;
+		}
+
+		.pagination button:hover:not(:disabled) {
+			background-color: rgb(255, 255, 255);
+			box-shadow: 0 0 20px 0 rgba(150,150,150,0.5);
+		}
+
+		.pagination button:disabled {
+			background-color: rgba(255,255,255,0.3);
+			cursor: not-allowed;
+		}
+
+		.page-info {
+			color: #ffffff;
+			font-weight: 500;
+		}
+
+		.loading {
+			text-align: center;
+			padding: 40px;
+			font-size: 18px;
+		}
+
+		.error {
+			text-align: center;
+			padding: 40px;
+			color: #f44336;
+			font-size: 18px;
+		}
+	</style>
+</head>
+
+<body>
+	<script>
+		var token = localStorage.getItem('token');
+		if (!token || token == "undefined") {
+			window.location.href = server_address + "login.html";
+		}
+
+		var expires_at = new Date(localStorage.getItem('token_expires_at'));
+		var current_date = new Date();
+		if (current_date > expires_at){
+			window.location.href = server_address + "login.html";
+		}
+	</script>
+
+	<div class="container">
+		<button class="back-button" onclick="window.location.href = server_address + 'player.html'">← Back to Game</button>
+
+		<h1>My Attempts</h1>
+
+		<div id="content">
+			<div class="loading">Loading your attempts...</div>
+		</div>
+
+		<div id="pagination" class="pagination" style="display: none;">
+			<button id="prevBtn">Previous</button>
+			<span id="pageInfo" class="page-info"></span>
+			<button id="nextBtn">Next</button>
+		</div>
+	</div>
+</body>
+
+<script>
+	let currentPage = 0;
+	let itemsPerPage = 50;
+	let sortColumn = "pa.date_attempted";
+	let sortDirection = "DESC";
+	let totalItems = 0;
+
+	function loadAttempts() {
+		var token = localStorage.getItem('token');
+
+		$.ajax({
+			type: "POST",
+			url: server_address + "backend/my_attempts",
+			headers: {
+				'Authorization': 'Bearer ' + token,
+				'Content-Type': 'application/json'
+			},
+			data: JSON.stringify({
+				startIndex: currentPage * itemsPerPage,
+				amount: itemsPerPage,
+				sortColumn: sortColumn + " " + sortDirection
+			})
+		}).done(function(data) {
+			displayAttempts(data);
+		}).fail(function(xhr) {
+			if (xhr.status === 401) {
+				window.location.href = server_address + "login.html";
+			} else {
+				document.getElementById('content').innerHTML = '<div class="error">Error loading attempts. Please try again.</div>';
+			}
+		});
+	}
+
+	function displayAttempts(attempts) {
+		if (attempts.length === 0 && currentPage === 0) {
+			document.getElementById('content').innerHTML = '<div style="text-align: center; padding: 40px; font-size: 18px;">No attempts found. Start solving problems to see your history here!</div>';
+			return;
+		}
+
+		let html = `
+			<table>
+				<thead>
+					<tr>
+						<th onclick="sortBy('pa.date_attempted')">Time</th>
+						<th onclick="sortBy('p.id')">Problem ID</th>
+						<th onclick="sortBy('g.title')">Game</th>
+						<th onclick="sortBy('p.move_number')">Move #</th>
+						<th onclick="sortBy('p.rating')">Problem Rating</th>
+						<th onclick="sortBy('pa.success')">Result</th>
+						<th onclick="sortBy('pa.user_new_rating')">My Rating</th>
+					</tr>
+				</thead>
+				<tbody>
+		`;
+
+		attempts.forEach(function(attempt) {
+			let date = new Date(attempt.date_attempted).toISOString().replace('T', ' ').slice(0, -5);
+			let result = attempt.success ?
+				'<span class="success">✓ Correct</span>' :
+				'<span class="failure">✗ Wrong</span>';
+
+			html += `
+				<tr>
+					<td>${date}</td>
+					<td><a href="/problems/${attempt.problem_id}" class="problem-link">${attempt.problem_id}</a></td>
+					<td>${attempt.game_title}</td>
+					<td>${attempt.game_move_number}</td>
+					<td>${attempt.problem_rating}</td>
+					<td>${result}</td>
+					<td>${attempt.user_new_rating}</td>
+				</tr>
+			`;
+		});
+
+		html += `
+				</tbody>
+			</table>
+		`;
+
+		document.getElementById('content').innerHTML = html;
+
+		// Update pagination
+		updatePagination(attempts.length);
+	}
+
+	function updatePagination(itemCount) {
+		const pagination = document.getElementById('pagination');
+		const prevBtn = document.getElementById('prevBtn');
+		const nextBtn = document.getElementById('nextBtn');
+		const pageInfo = document.getElementById('pageInfo');
+
+		if (itemCount > 0 || currentPage > 0) {
+			pagination.style.display = 'flex';
+
+			prevBtn.disabled = currentPage === 0;
+			nextBtn.disabled = itemCount < itemsPerPage;
+
+			let startItem = currentPage * itemsPerPage + 1;
+			let endItem = currentPage * itemsPerPage + itemCount;
+			pageInfo.textContent = `Page ${currentPage + 1} (${startItem}-${endItem})`;
+		} else {
+			pagination.style.display = 'none';
+		}
+	}
+
+	function sortBy(column) {
+		if (sortColumn === column) {
+			// Toggle direction if same column
+			sortDirection = sortDirection === "ASC" ? "DESC" : "ASC";
+		} else {
+			// New column, start with DESC for most columns, ASC for text columns
+			sortColumn = column;
+			if (column === "g.title") {
+				sortDirection = "ASC";
+			} else {
+				sortDirection = "DESC";
+			}
+		}
+		currentPage = 0;
+		loadAttempts();
+	}
+
+	document.getElementById('prevBtn').addEventListener('click', function() {
+		if (currentPage > 0) {
+			currentPage--;
+			loadAttempts();
+		}
+	});
+
+	document.getElementById('nextBtn').addEventListener('click', function() {
+		currentPage++;
+		loadAttempts();
+	});
+
+	// Load initial data
+	loadAttempts();
+</script>
+</html>

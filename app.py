@@ -120,6 +120,8 @@ def get_new_problem(current_user):
     problem_ids_attempted = [p.id for p in problems if p.attempts > 0]
     problems = [p for p in problems if p.id not in problem_ids_attempted or p.attempts > 0]
 
+    problems = [p for p in problems if p.id == 1068]
+
     problems_min_attempts = [p for p in problems if p.attempts == min([pr.attempts for pr in problems])]
     problems_in_rating_range = [p for p in problems_min_attempts if current_user.rating + 200 > p.rating > current_user.rating - 200]
 
@@ -210,15 +212,20 @@ def make_attempt(current_user):
     move = body["move"]
 
     mysql.query("""
-        select p.id, p.rating, p.kfactor, g.title, g.date_played 
+        select p.id, p.rating, p.kfactor, g.title, g.date_played, p.user_rating,
+            (select count(*) from problem_attempt pa where pa.problem_id = p.id) as total_attempts,
+            (select rating from problem_rating pr where pr.problem_id = p.id and pr.user_id = %s) as my_rating
         from problem p
         join game g on g.id = p.game_id
-        where 
+        where
             p.game_id = %s
-            and p.move_number = %s""", (game_id, move_number))
-    
+            and p.move_number = %s""", (current_user.id, game_id, move_number))
+
     result = mysql.cursor.fetchone()
     problem = Problem(result[0], None, result[1], result[2], None, None, result[3], result[4])
+    user_rating = result[5]
+    total_attempts = result[6]
+    my_rating = result[7]
 
     problem.set_solutions(mysql)
 
@@ -261,6 +268,9 @@ def make_attempt(current_user):
         "rating_change": current_user.rating - old_rating,
         "problem_rating": problem.rating,
         "problem_rating_change": problem.rating - problem_old_rating,
+        "total_attempts": total_attempts + 1,  # +1 because we just added this attempt
+        "user_rating": user_rating,
+        "my_rating": my_rating,
         "solutions": [{
             "move": row[0],
             "winrate": row[1],
@@ -357,3 +367,142 @@ def get_problem_by_id(current_user, id):
             "score_lead": row[2]
         } for row in problem.solutions]
     }
+
+
+@app.route("/backend/my_attempts", methods=["POST"])
+@token_required
+def get_my_attempts(current_user):
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+    body = request.json
+
+    start_index = body["startIndex"]
+    amount = body["amount"]
+    sort_column = body["sortColumn"]
+
+    mysql.query("""
+        select
+            pa.date_attempted,
+            p.id,
+            p.rating,
+            pa.success,
+            pa.user_new_rating,
+            g.title as game_title,
+            p.move_number
+        from problem_attempt pa
+        join problem p on pa.problem_id = p.id
+        join game g on g.id = p.game_id
+        where pa.user_id = %s
+        order by {}
+        limit %s, %s""".format(sort_column), (current_user.id, start_index, amount))
+    
+    results = mysql.cursor.fetchall()
+
+    mysql.commit_and_close()
+
+    return [{
+            "date_attempted": row[0],
+            "problem_id": row[1],
+            "problem_rating": round(row[2]),
+            "success": True if row[3] == 1 else False,
+            "user_new_rating": round(row[4]),
+            "game_title": row[5],
+            "game_move_number": row[6]
+        }
+        for row in results]
+
+
+@app.route("/backend/problems", methods=["POST"])
+@token_required
+def get_problems(current_user):
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+    body = request.json
+
+    rating_start = body["rating_start"]
+    rating_end = body["rating_end"]
+
+    start_index = body["startIndex"]
+    amount = body["amount"]
+    sort_column = body["sortColumn"]
+
+    mysql.query("""
+        select
+            p.id,
+            p.rating,
+            g.title as game_title,
+            p.move_number,
+            count(*) as attempts
+        from problem p
+        join problem_attempt pa on pa.problem_id = p.id
+        join game g on g.id = p.game_id
+        where p.rating between %s and %s
+        group by p.id
+        order by {}
+        limit %s, %s""".format(sort_column), (rating_start, rating_end, start_index, amount))
+    
+    results = mysql.cursor.fetchall()
+
+    mysql.commit_and_close()
+
+    return [{
+            "id": row[0],
+            "rating": round(row[1]),
+            "game_title": row[2],
+            "move_number": row[3],
+            "attempts": row[4]
+        }
+        for row in results]
+
+
+@app.route("/backend/problem_count", methods=["GET"])
+@token_required
+def get_problem_count(current_user):
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+
+    mysql.query("select count(*) from problem")
+    
+    result = mysql.cursor.fetchone()
+
+    mysql.commit_and_close()
+
+    return str(result[0])
+
+
+@app.route("/backend/rate_problem", methods=["POST"])
+@token_required
+def rate_problem(current_user):
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+    body = request.json
+
+    rating = body["rating"]
+    problem_id = body["problem_id"]
+
+    if rating > 5 or rating < 1:
+        return Response("", 400)
+    
+    mysql.query("SELECT id FROM problem_rating WHERE user_id = %s and problem_id = %s", (current_user.id, problem_id))
+
+    result = mysql.cursor.fetchone()
+
+    if result:
+        mysql.query("UPDATE problem_rating SET rating = %s WHERE user_id = %s and problem_id = %s", (rating, current_user.id, problem_id))
+    else:
+        mysql.query("INSERT INTO problem_rating (user_id, problem_id, rating) values (%s, %s, %s)", (current_user.id, problem_id, rating))
+    
+    mysql.query("UPDATE problem SET user_rating = (SELECT avg(rating) from problem_rating WHERE problem_id = %s) where id = %s", (problem_id, problem_id))
+
+    mysql.commit_and_close()
+    return Response("", 200)
+
+
+@app.route("/backend/add_comment", methods=["POST"])
+@token_required
+def add_comment(current_user):
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+    body = request.json
+
+    comment = body["rating"]
+    problem_id = body["problem_id"]
+
+    mysql.query("INSERT INTO problem_comment (user_id, problem_id, comment) values (%s, %s, %s)", (current_user.id, problem_id, comment))
+    mysql.commit_and_close()
+    return Response("", 200)

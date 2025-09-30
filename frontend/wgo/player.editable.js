@@ -107,11 +107,20 @@ var make_attempt = function (player, x, y) {
 
 		plus = result.problem_rating_change > 0 ? "+" : "";
 
+		function formatStarRating(rating) {
+			if (!rating) return "No ratings yet";
+			const stars = "★".repeat(Math.round(rating)) + "☆".repeat(5 - Math.round(rating));
+			return stars + " (" + rating.toFixed(1) + "/5)";
+		}
+
 		player.kifu.info = {
 			problem_id: result.problem_id,
 			problem_rating: Math.round(result.problem_rating) + " (" + plus + (Math.round(result.problem_rating_change * 10) / 10) + ")",
 			problem_from_game: result.game_title,
-			problem_game_date: new Date(result.game_date).toDateString()
+			problem_game_date: new Date(result.game_date).toDateString(),
+			"Total attempts": result.total_attempts || 0,
+			"Average user rating": formatStarRating(result.user_rating),
+			my_rating: result.my_rating || null
 		};
 
 		player.dispatchEvent({

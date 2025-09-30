@@ -385,8 +385,24 @@ Control.menu = [{
 		constructor: control.MenuItem,
 		args: {
 			name: "Discord",
-			click: function() {		
+			click: function() {
 				window.open("https://discord.gg/6TvCYUdt9y").focus();
+			}
+		}
+	}, {
+		constructor: control.MenuItem,
+		args: {
+			name: "My attempts",
+			click: function() {
+				window.location.href = server_address + "my_attempts.html";
+			}
+		}
+	}, {
+		constructor: control.MenuItem,
+		args: {
+			name: "Browse problems",
+			click: function() {
+				window.location.href = server_address + "browse_problems.html";
 			}
 		}
 	}

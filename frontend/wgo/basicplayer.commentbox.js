@@ -57,8 +57,32 @@ var format_info = function(info, title) {
 	var ret = '<div class="wgo-info-list">';
 	if(title) ret += '<div class="wgo-info-title">'+WGo.t("Info")+'</div>';
 	for(var key in info) {
-		ret += '<div class="wgo-info-item"><span class="wgo-info-label">'+key+'</span><span class="wgo-info-value">'+info[key]+'</span></div>';
+		// Skip internal properties used for rating functionality
+       	if(key === 'my_rating' || key === "problem_id") continue;
+
+       	// Make problem_id clickable
+       	if(key === 'Problem id') {
+       		ret += '<div class="wgo-info-item"><span class="wgo-info-label">'+key+'</span><span class="wgo-info-value"><a href="/problems/'+info[key]+'" class="wgo-problem-link">'+info[key]+'</a></span></div>';
+       	} else {
+       		ret += '<div class="wgo-info-item"><span class="wgo-info-label">'+key+'</span><span class="wgo-info-value">'+info[key]+'</span></div>';
+       	}	
 	}
+
+	// Add rating section if we have a problem_id AND user is logged in
+	var token = localStorage.getItem('token');
+	if(info.problem_id && token && token != "undefined") {
+		ret += '<div class="wgo-info-item wgo-rating-section">';
+		ret += '<span class="wgo-info-label">My rating</span>';
+		ret += '<div class="wgo-star-rating">';
+		for(var i = 1; i <= 5; i++) {
+			// Prefill stars if user has already rated this problem
+			var starSymbol = (info.my_rating && i <= info.my_rating) ? '★' : '☆';
+			ret += '<span class="wgo-star" data-rating="' + i + '">' + starSymbol + '</span>';
+		}
+		ret += '</div>';
+		ret += '</div>';
+	}
+
 	ret += '</div>';
 	return ret;
 }
@@ -87,12 +111,25 @@ var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(p
 		}
 		else {
 			this.element.className = "wgo-commentbox wgo-gameinfo";
-			
+
 			if(this._update) {
 				player.removeEventListener("update", this._update);
 				delete this._update;
 			}
-			this.comment_text.innerHTML = format_info(e.target.getGameInfo());
+
+			// Merge game info with problem info from attempt
+			var gameInfo = e.target.getGameInfo();
+			if(e.kifu.info) {
+				// Add problem info from attempt
+				gameInfo.problem_id = e.kifu.info.problem_id;
+				gameInfo["Total attempts"] = e.kifu.info["Total attempts"];
+				gameInfo["Average user rating"] = e.kifu.info["Average user rating"];
+				// Keep internal data for rating functionality
+				gameInfo.my_rating = e.kifu.info.my_rating;
+			}
+
+			this.comment_text.innerHTML = format_info(gameInfo);
+			this.setupStarRating(gameInfo);
 		}
 	}.bind(this));
 
@@ -156,6 +193,90 @@ CommentBox.prototype.getCommentText = function(comment, formatNicks, formatMoves
 		return comm;
 	}
 	return "";
+};
+
+CommentBox.prototype.setupStarRating = function(gameInfo) {
+	var stars = this.element.querySelectorAll('.wgo-star');
+	var player = this.player;
+	var token = localStorage.getItem('token');
+
+	// Only show rating if we have a problem_id from an attempt AND user is logged in
+	if(!gameInfo.problem_id || stars.length === 0 || !token || token == "undefined") return;
+
+	// Apply initial styling for existing rating
+	if(gameInfo.my_rating) {
+		stars.forEach(function(star, index) {
+			var rating = parseInt(star.getAttribute('data-rating'));
+			if(rating <= gameInfo.my_rating) {
+				star.style.color = '#FFD700';
+			}
+		});
+	}
+
+	stars.forEach(function(star, index) {
+		star.addEventListener('click', function() {
+			var rating = parseInt(star.getAttribute('data-rating'));
+
+			// Visual feedback - fill stars up to the clicked one
+			stars.forEach(function(s, i) {
+				if(i < rating) {
+					s.textContent = '★';
+					s.style.color = '#FFD700';
+				} else {
+					s.textContent = '☆';
+					s.style.color = '';
+				}
+			});
+
+			// Call backend to rate the problem
+			var token = localStorage.getItem('token');
+			if(token) {
+				$.ajax({
+					type: "POST",
+					url: server_address + "backend/rate_problem",
+					headers: {
+						'Authorization': 'Bearer ' + token,
+						'Content-Type': 'application/json'
+					},
+					data: JSON.stringify({
+						problem_id: gameInfo.problem_id,
+						rating: rating
+					})
+				}).done(function(result) {
+					// Show confirmation
+					player.notification("Thank you for rating this problem!");
+					setTimeout(function() {
+						player.notification();
+					}, 3000);
+				}).fail(function(xhr) {
+					console.error('Failed to rate problem:', xhr);
+					player.notification("Failed to submit rating. Please try again.");
+					setTimeout(function() {
+						player.notification();
+					}, 3000);
+				});
+			}
+		});
+
+		// Hover effects
+		star.addEventListener('mouseover', function() {
+			var hoverRating = parseInt(star.getAttribute('data-rating'));
+			stars.forEach(function(s, i) {
+				if(i < hoverRating) {
+					s.style.color = '#FFD700';
+				} else {
+					s.style.color = '';
+				}
+			});
+		});
+
+		star.addEventListener('mouseout', function() {
+			// Reset to default state
+			stars.forEach(function(s) {
+				s.style.color = '';
+			});
+		});
+	});
 };
 
 /**

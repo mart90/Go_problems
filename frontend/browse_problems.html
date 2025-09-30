@@ -1,0 +1,652 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Real Go problems - Browse Problems</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	<script src="wgo/serverAddress.js"></script>
+
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap">
+	<style>
+		body {
+			background-color: #101014;
+			font-family: 'Poppins', sans-serif;
+			color: #ffffff;
+			margin: 0;
+			padding: 20px;
+		}
+
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+			background-color: rgba(255,255,255,0.13);
+			border-radius: 10px;
+			backdrop-filter: blur(10px);
+			border: 2px solid rgba(255,255,255,0.1);
+			box-shadow: 0 0 40px rgba(8,7,16,0.6);
+			padding: 30px;
+		}
+
+		h1 {
+			text-align: center;
+			margin-bottom: 30px;
+			font-size: 32px;
+			font-weight: 500;
+		}
+
+		.back-button {
+			background-color: #ffffffa6;
+			color: #080710;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: 600;
+			margin-bottom: 20px;
+		}
+
+		.back-button:hover {
+			background-color: rgb(255, 255, 255);
+			box-shadow: 0 0 20px 0 rgba(150,150,150,0.5);
+		}
+
+		.filters {
+			background-color: rgba(255,255,255,0.1);
+			padding: 20px;
+			border-radius: 10px;
+			margin-bottom: 20px;
+		}
+
+		.filter-group {
+			display: flex;
+			align-items: center;
+			gap: 15px;
+			margin-bottom: 15px;
+			flex-wrap: wrap;
+		}
+
+		.filter-group label {
+			font-weight: 600;
+			min-width: 120px;
+		}
+
+		.range-inputs {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.range-inputs input {
+			width: 80px;
+			padding: 5px 10px;
+			background-color: rgba(255,255,255,0.1);
+			border: 1px solid rgba(255,255,255,0.3);
+			border-radius: 3px;
+			color: #ffffff;
+			text-align: center;
+		}
+
+		.dual-range-slider {
+			position: relative;
+			width: 400px;
+			height: 40px;
+			margin: 10px 0;
+		}
+
+		.slider-track {
+			position: absolute;
+			top: 50%;
+			left: 0;
+			right: 0;
+			height: 4px;
+			background-color: rgba(255,255,255,0.3);
+			border-radius: 2px;
+			transform: translateY(-50%);
+		}
+
+		.slider-range {
+			position: absolute;
+			top: 50%;
+			height: 4px;
+			background-color: #5ba8f7;
+			border-radius: 2px;
+			transform: translateY(-50%);
+		}
+
+		.slider-handle {
+			position: absolute;
+			top: 50%;
+			width: 20px;
+			height: 20px;
+			background-color: #ffffff;
+			border: 2px solid #5ba8f7;
+			border-radius: 50%;
+			cursor: pointer;
+			transform: translate(-50%, -50%);
+			box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+		}
+
+		.slider-handle:hover {
+			background-color: #f0f0f0;
+			transform: translate(-50%, -50%) scale(1.1);
+		}
+
+		.slider-handle.dragging {
+			background-color: #5ba8f7;
+			transform: translate(-50%, -50%) scale(1.2);
+		}
+
+		.slider-labels {
+			display: flex;
+			justify-content: space-between;
+			margin-top: 25px;
+			font-size: 12px;
+			color: #cccccc;
+		}
+
+		.apply-filter-btn {
+			background-color: #ffffffa6;
+			color: #080710;
+			padding: 8px 16px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-weight: 600;
+		}
+
+		.apply-filter-btn:hover {
+			background-color: rgb(255, 255, 255);
+			box-shadow: 0 0 20px 0 rgba(150,150,150,0.5);
+		}
+
+		.stats {
+			text-align: center;
+			margin-bottom: 20px;
+			font-size: 16px;
+			color: #cccccc;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-bottom: 20px;
+		}
+
+		th, td {
+			padding: 12px;
+			text-align: left;
+			border-bottom: 1px solid rgba(255,255,255,0.2);
+		}
+
+		th {
+			background-color: rgba(255,255,255,0.1);
+			font-weight: 600;
+			cursor: pointer;
+		}
+
+		th:hover {
+			background-color: rgba(255,255,255,0.15);
+		}
+
+		tr:hover {
+			background-color: rgba(255,255,255,0.05);
+		}
+
+		.problem-link {
+			color: #5ba8f7;
+			text-decoration: none;
+			cursor: pointer;
+		}
+
+		.problem-link:hover {
+			text-decoration: underline;
+		}
+
+		.pagination {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 10px;
+			margin-top: 20px;
+		}
+
+		.pagination button {
+			background-color: #ffffffa6;
+			color: #080710;
+			border: none;
+			padding: 8px 12px;
+			border-radius: 5px;
+			cursor: pointer;
+			font-weight: 600;
+		}
+
+		.pagination button:hover:not(:disabled) {
+			background-color: rgb(255, 255, 255);
+			box-shadow: 0 0 20px 0 rgba(150,150,150,0.5);
+		}
+
+		.pagination button:disabled {
+			background-color: rgba(255,255,255,0.3);
+			cursor: not-allowed;
+		}
+
+		.page-info {
+			color: #ffffff;
+			font-weight: 500;
+		}
+
+		.loading {
+			text-align: center;
+			padding: 40px;
+			font-size: 18px;
+		}
+
+		.error {
+			text-align: center;
+			padding: 40px;
+			color: #f44336;
+			font-size: 18px;
+		}
+	</style>
+</head>
+
+<body>
+	<script>
+		var token = localStorage.getItem('token');
+		if (!token || token == "undefined") {
+			window.location.href = server_address + "login.html";
+		}
+
+		var expires_at = new Date(localStorage.getItem('token_expires_at'));
+		var current_date = new Date();
+		if (current_date > expires_at){
+			window.location.href = server_address + "login.html";
+		}
+	</script>
+
+	<div class="container">
+		<button class="back-button" onclick="window.location.href = server_address + 'player.html'">← Back to Game</button>
+
+		<h1>Browse Problems</h1>
+
+		<div class="stats" id="stats">
+			<div class="loading">Loading problems...</div>
+		</div>
+
+		<div class="filters">
+			<div class="filter-group">
+				<label>Rating Range:</label>
+				<div class="range-inputs">
+					<input type="number" id="ratingStart" min="500" max="3000" value="1400" onchange="updateSliderFromInputs()">
+					<span>to</span>
+					<input type="number" id="ratingEnd" min="500" max="3000" value="1600" onchange="updateSliderFromInputs()">
+				</div>
+				<button class="apply-filter-btn" onclick="applyFilter()">Apply Filter</button>
+			</div>
+			<div class="dual-range-slider" id="dualRangeSlider">
+				<div class="slider-track"></div>
+				<div class="slider-range" id="sliderRange"></div>
+				<div class="slider-handle" id="minHandle"></div>
+				<div class="slider-handle" id="maxHandle"></div>
+				<div class="slider-labels">
+					<span>500</span>
+					<span>1000</span>
+					<span>1500</span>
+					<span>2000</span>
+					<span>2500</span>
+					<span>3000</span>
+				</div>
+			</div>
+		</div>
+
+		<div id="content">
+			<div class="loading">Loading problems...</div>
+		</div>
+
+		<div id="pagination" class="pagination" style="display: none;">
+			<button id="prevBtn">Previous</button>
+			<span id="pageInfo" class="page-info"></span>
+			<button id="nextBtn">Next</button>
+		</div>
+	</div>
+</body>
+
+<script>
+	let currentPage = 0;
+	let itemsPerPage = 50;
+	let sortColumn = "p.rating";
+	let sortDirection = "DESC";
+	let userRating = 1500; // Default, will be fetched
+	let totalProblems = 0;
+
+	// Slider variables
+	const MIN_RATING = 500;
+	const MAX_RATING = 3000;
+	let isDragging = false;
+	let activeHandle = null;
+
+	function getUserRating() {
+		var token = localStorage.getItem('token');
+
+		$.ajax({
+			type: "GET",
+			url: server_address + "backend/get_current_rating",
+			headers: {
+				'Authorization': 'Bearer ' + token
+			}
+		}).done(function(rating) {
+			userRating = Math.round(rating);
+			// Set default filter range based on user rating
+			document.getElementById('ratingStart').value = Math.max(MIN_RATING, userRating - 100);
+			document.getElementById('ratingEnd').value = Math.min(MAX_RATING, userRating + 100);
+			initializeSlider();
+			loadProblems();
+		}).fail(function(xhr) {
+			if (xhr.status === 401) {
+				window.location.href = server_address + "login.html";
+			} else {
+				// Use default values if can't get rating
+				initializeSlider();
+				loadProblems();
+			}
+		});
+	}
+
+	function getProblemCount() {
+		var token = localStorage.getItem('token');
+
+		$.ajax({
+			type: "GET",
+			url: server_address + "backend/problem_count",
+			headers: {
+				'Authorization': 'Bearer ' + token,
+				'Content-Type': 'application/json'
+			},
+			data: JSON.stringify({})
+		}).done(function(count) {
+			totalProblems = count;
+			updateStats();
+		}).fail(function(xhr) {
+			console.error('Failed to get problem count');
+		});
+	}
+
+	function updateStats() {
+		let ratingStart = parseInt(document.getElementById('ratingStart').value);
+		let ratingEnd = parseInt(document.getElementById('ratingEnd').value);
+
+		document.getElementById('stats').innerHTML =
+			`<strong>Total Problems:</strong> ${totalProblems}`;
+	}
+
+	function loadProblems() {
+		var token = localStorage.getItem('token');
+		let ratingStart = parseInt(document.getElementById('ratingStart').value);
+		let ratingEnd = parseInt(document.getElementById('ratingEnd').value);
+
+		$.ajax({
+			type: "POST",
+			url: server_address + "backend/problems",
+			headers: {
+				'Authorization': 'Bearer ' + token,
+				'Content-Type': 'application/json'
+			},
+			data: JSON.stringify({
+				rating_start: ratingStart,
+				rating_end: ratingEnd,
+				startIndex: currentPage * itemsPerPage,
+				amount: itemsPerPage,
+				sortColumn: sortColumn + " " + sortDirection
+			})
+		}).done(function(data) {
+			displayProblems(data);
+			updateStats();
+		}).fail(function(xhr) {
+			if (xhr.status === 401) {
+				window.location.href = server_address + "login.html";
+			} else {
+				document.getElementById('content').innerHTML = '<div class="error">Error loading problems. Please try again.</div>';
+			}
+		});
+	}
+
+	function displayProblems(problems) {
+		if (problems.length === 0 && currentPage === 0) {
+			document.getElementById('content').innerHTML = '<div style="text-align: center; padding: 40px; font-size: 18px;">No problems found in this rating range. Try adjusting the filter.</div>';
+			document.getElementById('pagination').style.display = 'none';
+			return;
+		}
+
+		let html = `
+			<table>
+				<thead>
+					<tr>
+						<th onclick="sortBy('p.id')">Problem ID</th>
+						<th onclick="sortBy('p.rating')">Rating</th>
+						<th onclick="sortBy('g.title')">Game</th>
+						<th onclick="sortBy('p.move_number')">Move #</th>
+						<th onclick="sortBy('attempts')">Total Attempts</th>
+					</tr>
+				</thead>
+				<tbody>
+		`;
+
+		problems.forEach(function(problem) {
+			html += `
+				<tr>
+					<td><a href="/problems/${problem.id}" class="problem-link">${problem.id}</a></td>
+					<td>${problem.rating}</td>
+					<td>${problem.game_title}</td>
+					<td>${problem.move_number}</td>
+					<td>${problem.attempts}</td>
+				</tr>
+			`;
+		});
+
+		html += `
+				</tbody>
+			</table>
+		`;
+
+		document.getElementById('content').innerHTML = html;
+
+		// Update pagination
+		updatePagination(problems.length);
+	}
+
+	function updatePagination(itemCount) {
+		const pagination = document.getElementById('pagination');
+		const prevBtn = document.getElementById('prevBtn');
+		const nextBtn = document.getElementById('nextBtn');
+		const pageInfo = document.getElementById('pageInfo');
+
+		if (itemCount > 0 || currentPage > 0) {
+			pagination.style.display = 'flex';
+
+			prevBtn.disabled = currentPage === 0;
+			nextBtn.disabled = itemCount < itemsPerPage;
+
+			let startItem = currentPage * itemsPerPage + 1;
+			let endItem = currentPage * itemsPerPage + itemCount;
+			pageInfo.textContent = `Page ${currentPage + 1} (${startItem}-${endItem})`;
+		} else {
+			pagination.style.display = 'none';
+		}
+	}
+
+	function sortBy(column) {
+		if (sortColumn === column) {
+			// Toggle direction if same column
+			sortDirection = sortDirection === "ASC" ? "DESC" : "ASC";
+		} else {
+			// New column, start with DESC for most columns, ASC for text columns
+			sortColumn = column;
+			if (column === "g.title") {
+				sortDirection = "ASC";
+			} else {
+				sortDirection = "DESC";
+			}
+		}
+		currentPage = 0;
+		loadProblems();
+	}
+
+	function applyFilter() {
+		currentPage = 0;
+		loadProblems();
+	}
+
+	// Slider functions
+	function initializeSlider() {
+		updateSlider();
+		setupSliderEvents();
+	}
+
+	function updateSlider() {
+		const minValue = parseInt(document.getElementById('ratingStart').value);
+		const maxValue = parseInt(document.getElementById('ratingEnd').value);
+
+		const slider = document.getElementById('dualRangeSlider');
+		const sliderWidth = slider.offsetWidth;
+
+		const minPercent = (minValue - MIN_RATING) / (MAX_RATING - MIN_RATING) * 100;
+		const maxPercent = (maxValue - MIN_RATING) / (MAX_RATING - MIN_RATING) * 100;
+
+		const minHandle = document.getElementById('minHandle');
+		const maxHandle = document.getElementById('maxHandle');
+		const sliderRange = document.getElementById('sliderRange');
+
+		minHandle.style.left = minPercent + '%';
+		maxHandle.style.left = maxPercent + '%';
+
+		sliderRange.style.left = minPercent + '%';
+		sliderRange.style.width = (maxPercent - minPercent) + '%';
+	}
+
+	function updateSliderFromInputs() {
+		// Ensure min doesn't exceed max
+		const minInput = document.getElementById('ratingStart');
+		const maxInput = document.getElementById('ratingEnd');
+
+		let minValue = parseInt(minInput.value);
+		let maxValue = parseInt(maxInput.value);
+
+		if (minValue > maxValue) {
+			minValue = maxValue;
+			minInput.value = minValue;
+		}
+
+		updateSlider();
+	}
+
+	function setupSliderEvents() {
+		const minHandle = document.getElementById('minHandle');
+		const maxHandle = document.getElementById('maxHandle');
+		const slider = document.getElementById('dualRangeSlider');
+
+		// Mouse events
+		minHandle.addEventListener('mousedown', (e) => startDrag(e, 'min'));
+		maxHandle.addEventListener('mousedown', (e) => startDrag(e, 'max'));
+
+		// Touch events for mobile
+		minHandle.addEventListener('touchstart', (e) => startDrag(e.touches[0], 'min'));
+		maxHandle.addEventListener('touchstart', (e) => startDrag(e.touches[0], 'max'));
+
+		document.addEventListener('mousemove', handleDrag);
+		document.addEventListener('mouseup', stopDrag);
+		document.addEventListener('touchmove', (e) => handleDrag(e.touches[0]));
+		document.addEventListener('touchend', stopDrag);
+
+		// Click on track to move nearest handle
+		slider.addEventListener('click', (e) => {
+			if (isDragging) return;
+
+			const rect = slider.getBoundingClientRect();
+			const clickPercent = (e.clientX - rect.left) / rect.width;
+			const clickValue = MIN_RATING + (MAX_RATING - MIN_RATING) * clickPercent;
+
+			const minValue = parseInt(document.getElementById('ratingStart').value);
+			const maxValue = parseInt(document.getElementById('ratingEnd').value);
+
+			// Move the closest handle
+			if (Math.abs(clickValue - minValue) < Math.abs(clickValue - maxValue)) {
+				document.getElementById('ratingStart').value = Math.round(clickValue);
+			} else {
+				document.getElementById('ratingEnd').value = Math.round(clickValue);
+			}
+
+			updateSliderFromInputs();
+		});
+	}
+
+	function startDrag(e, handleType) {
+		isDragging = true;
+		activeHandle = handleType;
+
+		const handle = document.getElementById(handleType === 'min' ? 'minHandle' : 'maxHandle');
+		handle.classList.add('dragging');
+
+		e.preventDefault();
+	}
+
+	function handleDrag(e) {
+		if (!isDragging || !activeHandle) return;
+
+		const slider = document.getElementById('dualRangeSlider');
+		const rect = slider.getBoundingClientRect();
+		const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+		const value = Math.round(MIN_RATING + (MAX_RATING - MIN_RATING) * percent);
+
+		const minInput = document.getElementById('ratingStart');
+		const maxInput = document.getElementById('ratingEnd');
+
+		if (activeHandle === 'min') {
+			const maxValue = parseInt(maxInput.value);
+			minInput.value = Math.min(value, maxValue);
+		} else {
+			const minValue = parseInt(minInput.value);
+			maxInput.value = Math.max(value, minValue);
+		}
+
+		updateSlider();
+		e.preventDefault();
+	}
+
+	function stopDrag() {
+		if (isDragging) {
+			isDragging = false;
+
+			const handles = document.querySelectorAll('.slider-handle');
+			handles.forEach(handle => handle.classList.remove('dragging'));
+
+			activeHandle = null;
+		}
+	}
+
+	document.getElementById('prevBtn').addEventListener('click', function() {
+		if (currentPage > 0) {
+			currentPage--;
+			loadProblems();
+		}
+	});
+
+	document.getElementById('nextBtn').addEventListener('click', function() {
+		currentPage++;
+		loadProblems();
+	});
+
+	// Allow Enter key to apply filter
+	document.getElementById('ratingStart').addEventListener('keypress', function(e) {
+		if (e.key === 'Enter') applyFilter();
+	});
+
+	document.getElementById('ratingEnd').addEventListener('keypress', function(e) {
+		if (e.key === 'Enter') applyFilter();
+	});
+
+	// Initialize
+	getUserRating();
+	getProblemCount();
+</script>
+</html>
