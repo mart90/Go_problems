@@ -15,7 +15,11 @@ from game_move import GameMove
 
 # python -m flask run
 
-app = Flask(__name__, template_folder="frontend/templates", static_folder="frontend", static_url_path="")
+if os.name == "NT":
+    app = Flask(__name__, template_folder="frontend/templates", static_folder="frontend", static_url_path="")
+else:
+    app = Flask(__name__, template_folder="frontend/templates")
+
 app.wsgi_app = ProxyFix(
     app.wsgi_app, 
     x_for=1, 
