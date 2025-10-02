@@ -15,7 +15,7 @@ from game_move import GameMove
 
 # python -m flask run
 
-if os.name == "NT":
+if os.name == "nt":
     app = Flask(__name__, template_folder="frontend/templates", static_folder="frontend", static_url_path="")
 else:
     app = Flask(__name__, template_folder="frontend/templates")
