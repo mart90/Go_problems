@@ -114,7 +114,8 @@ var make_attempt = function (player, x, y) {
 			problem_game_date: new Date(result.game_date).toDateString(),
 			"Total attempts": result.total_attempts || 0,
 			"Average user rating": player.formatStarRating(result.user_rating),
-			my_rating: result.my_rating || null
+			my_rating: result.my_rating || null,
+			comments: result.comments || []
 		};
 
 		player.dispatchEvent({

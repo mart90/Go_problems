@@ -282,6 +282,119 @@ a.wgo-move-link {
 	border-bottom: 0;
 }
 
+/* Tabs */
+.wgo-tabs {
+	display: flex;
+	border-bottom: 2px solid rgba(200,200,200,0.3);
+	margin-bottom: 10px;
+}
+
+.wgo-tab {
+	padding: 10px 15px;
+	cursor: pointer;
+	background-color: rgba(255,255,255,0.05);
+	border: none;
+	color: rgba(255,255,255,0.6);
+	transition: all 0.3s;
+	flex: 1;
+	text-align: center;
+	font-size: 0.9em;
+}
+
+.wgo-tab:hover {
+	background-color: rgba(255,255,255,0.1);
+	color: rgba(255,255,255,0.8);
+}
+
+.wgo-tab-active {
+	background-color: rgba(255,255,255,0.15);
+	color: rgba(255,255,255,1);
+	border-bottom: 2px solid rgba(255,255,255,0.8);
+}
+
+/* Comments section */
+.wgo-comments-section {
+	padding: 10px;
+	overflow-y: auto;
+	max-height: 300px;
+}
+
+.wgo-comments-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.wgo-comment-item {
+	background-color: rgba(255,255,255,0.05);
+	padding: 8px;
+	border-radius: 5px;
+	border-left: 3px solid rgba(200,200,200,0.3);
+}
+
+.wgo-comment-header {
+	font-size: 0.8em;
+	color: rgba(255,255,255,0.7);
+	margin-bottom: 5px;
+}
+
+.wgo-comment-body {
+	color: rgba(255,255,255,0.9);
+	line-height: 1.3;
+	white-space: pre-wrap;
+	font-size: 0.9em;
+}
+
+.wgo-no-comments {
+	text-align: center;
+	color: rgba(255,255,255,0.5);
+	padding: 15px;
+	font-style: italic;
+	font-size: 0.9em;
+}
+
+.wgo-comment-form {
+	margin-top: 15px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.wgo-comment-textarea {
+	width: 100%;
+	padding: 8px;
+	background-color: rgba(255,255,255,0.1);
+	border: 1px solid rgba(200,200,200,0.3);
+	border-radius: 5px;
+	color: rgba(255,255,255,0.9);
+	font-family: inherit;
+	resize: vertical;
+	box-sizing: border-box;
+	font-size: 0.9em;
+}
+
+.wgo-comment-textarea:focus {
+	outline: none;
+	border-color: rgba(200,200,200,0.5);
+	background-color: rgba(255,255,255,0.15);
+}
+
+.wgo-comment-submit {
+	align-self: flex-end;
+	padding: 8px 16px;
+	background-color: rgba(255,255,255,0.2);
+	border: 1px solid rgba(200,200,200,0.3);
+	border-radius: 5px;
+	color: rgba(255,255,255,0.9);
+	cursor: pointer;
+	transition: all 0.3s;
+	font-size: 0.9em;
+}
+
+.wgo-comment-submit:hover {
+	background-color: rgba(255,255,255,0.3);
+}
+
 /*--- /Comments box ----------------------------------------------------------------------*/
 
 /*--- Control box ------------------------------------------------------------------------*/

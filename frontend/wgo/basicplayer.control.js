@@ -376,22 +376,6 @@ Control.menu = [{
 	}, {
 		constructor: control.MenuItem,
 		args: {
-			name: "About",
-			click: function() {		
-				window.open(server_address + "about.html").focus();
-			}
-		}
-	}, {
-		constructor: control.MenuItem,
-		args: {
-			name: "Discord",
-			click: function() {
-				window.open("https://discord.gg/6TvCYUdt9y").focus();
-			}
-		}
-	}, {
-		constructor: control.MenuItem,
-		args: {
 			name: "My attempts",
 			click: function() {
 				window.location.href = server_address + "my_attempts.html";
@@ -403,6 +387,30 @@ Control.menu = [{
 			name: "Browse problems",
 			click: function() {
 				window.location.href = server_address + "browse_problems.html";
+			}
+		}
+	}, {
+		constructor: control.MenuItem,
+		args: {
+			name: "Statistics",
+			click: function() {
+				window.location.href = server_address + "statistics.html";
+			}
+		}
+	}, {
+		constructor: control.MenuItem,
+		args: {
+			name: "About",
+			click: function() {		
+				window.open(server_address + "about.html").focus();
+			}
+		}
+	}, {
+		constructor: control.MenuItem,
+		args: {
+			name: "Discord",
+			click: function() {
+				window.open("https://discord.gg/6TvCYUdt9y").focus();
 			}
 		}
 	}

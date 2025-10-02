@@ -1,0 +1,278 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Real Go problems - Statistics</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	<script src="wgo/serverAddress.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap">
+	<style>
+		body {
+			background-color: #101014;
+			font-family: 'Poppins', sans-serif;
+			color: #ffffff;
+			margin: 0;
+			padding: 20px;
+		}
+
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+			background-color: rgba(255,255,255,0.13);
+			border-radius: 10px;
+			backdrop-filter: blur(10px);
+			border: 2px solid rgba(255,255,255,0.1);
+			box-shadow: 0 0 40px rgba(8,7,16,0.6);
+			padding: 30px;
+		}
+
+		h1 {
+			text-align: center;
+			margin-bottom: 30px;
+			font-size: 32px;
+			font-weight: 500;
+		}
+
+		h2 {
+			text-align: center;
+			margin-top: 40px;
+			margin-bottom: 20px;
+			font-size: 24px;
+			font-weight: 500;
+		}
+
+		.back-button {
+			background-color: #ffffffa6;
+			color: #080710;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: 600;
+			margin-bottom: 20px;
+		}
+
+		.back-button:hover {
+			background-color: rgb(255, 255, 255);
+			box-shadow: 0 0 20px 0 rgba(150,150,150,0.5);
+		}
+
+		.stats-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+			margin: 30px 0;
+		}
+
+		@media (max-width: 768px) {
+			.stats-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+
+		.stat-card {
+			background-color: rgba(255,255,255,0.1);
+			border-radius: 8px;
+			padding: 30px;
+			text-align: center;
+			border: 1px solid rgba(255,255,255,0.2);
+		}
+
+		.stat-label {
+			font-size: 16px;
+			color: rgba(255,255,255,0.7);
+			margin-bottom: 10px;
+		}
+
+		.stat-number {
+			font-size: 48px;
+			font-weight: 600;
+			color: #5ba8f7;
+		}
+
+		.chart-container {
+			position: relative;
+			height: 400px;
+			margin: 30px 0;
+			padding: 20px;
+			background-color: rgba(255,255,255,0.05);
+			border-radius: 8px;
+			border: 1px solid rgba(255,255,255,0.1);
+		}
+
+		.loading {
+			text-align: center;
+			padding: 40px;
+			font-size: 18px;
+		}
+
+		.error {
+			text-align: center;
+			padding: 40px;
+			color: #f44336;
+			font-size: 18px;
+		}
+	</style>
+</head>
+
+<body>
+	<script>
+		var token = localStorage.getItem('token');
+		if (!token || token == "undefined") {
+			window.location.href = server_address + "login.html";
+		}
+
+		var expires_at = new Date(localStorage.getItem('token_expires_at'));
+		var current_date = new Date();
+		if (current_date > expires_at){
+			window.location.href = server_address + "login.html";
+		}
+	</script>
+
+	<div class="container">
+		<button class="back-button" onclick="window.location.href = server_address + 'player.html'">← Back to Game</button>
+
+		<h1>Statistics</h1>
+
+		<div class="stats-grid">
+			<div class="stat-card">
+				<div class="stat-label">Total Problems</div>
+				<div class="stat-number" id="problem_count">-</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-label">Total Attempts</div>
+				<div class="stat-number" id="attempt_count">-</div>
+			</div>
+		</div>
+
+		<h2>User Rating Distribution</h2>
+		<p style="text-align: center; color: rgba(255,255,255,0.6); margin-top: -10px; margin-bottom: 20px; font-size: 14px;">Only users with more than 20 attempts are counted</p>
+		<div class="chart-container">
+			<canvas id="userRatingChart"></canvas>
+		</div>
+
+		<h2>Problem Rating Distribution</h2>
+		<div class="chart-container">
+			<canvas id="problemRatingChart"></canvas>
+		</div>
+	</div>
+
+	<script>
+		var token = localStorage.getItem('token');
+
+		// Fetch problem count
+		$.ajax({
+			type: "GET",
+			url: server_address + "backend/problem_count",
+			headers: {
+				'Authorization': 'Bearer ' + token
+			}
+		}).done(function(data) {
+			document.getElementById('problem_count').textContent = parseInt(data).toLocaleString();
+		}).fail(function(xhr) {
+			console.error('Error fetching problem count:', xhr);
+			document.getElementById('problem_count').textContent = 'Error';
+		});
+
+		// Fetch attempt count
+		$.ajax({
+			type: "GET",
+			url: server_address + "backend/attempt_count",
+			headers: {
+				'Authorization': 'Bearer ' + token
+			}
+		}).done(function(data) {
+			document.getElementById('attempt_count').textContent = parseInt(data).toLocaleString();
+		}).fail(function(xhr) {
+			console.error('Error fetching attempt count:', xhr);
+			document.getElementById('attempt_count').textContent = 'Error';
+		});
+
+		// Fetch rating distributions and create charts
+		$.ajax({
+			type: "GET",
+			url: server_address + "backend/rating_distributions",
+			headers: {
+				'Authorization': 'Bearer ' + token
+			}
+		}).done(function(data) {
+			// Extract labels and data
+			const labels = data.users.map(bucket => bucket.bucket);
+			const userCounts = data.users.map(bucket => bucket.count);
+			const problemCounts = data.problems.map(bucket => bucket.count);
+
+			// Common chart options
+			const chartOptions = {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: {
+						display: false
+					}
+				},
+				scales: {
+					y: {
+						beginAtZero: true,
+						ticks: {
+							color: '#ffffff',
+							precision: 0
+						},
+						grid: {
+							color: '#ffffff23'
+						}
+					},
+					x: {
+						ticks: {
+							color: '#ffffff',
+							maxRotation: 45,
+							minRotation: 45
+						},
+						grid: {
+							color: '#ffffff23'
+						}
+					}
+				}
+			};
+
+			// Create user rating chart
+			const userCtx = document.getElementById('userRatingChart').getContext('2d');
+			new Chart(userCtx, {
+				type: 'bar',
+				data: {
+					labels: labels,
+					datasets: [{
+						label: 'Number of Users',
+						data: userCounts,
+						backgroundColor: 'rgba(91, 168, 247, 0.6)',
+						borderColor: 'rgba(91, 168, 247, 1)',
+						borderWidth: 1
+					}]
+				},
+				options: chartOptions
+			});
+
+			// Create problem rating chart
+			const problemCtx = document.getElementById('problemRatingChart').getContext('2d');
+			new Chart(problemCtx, {
+				type: 'bar',
+				data: {
+					labels: labels,
+					datasets: [{
+						label: 'Number of Problems',
+						data: problemCounts,
+						backgroundColor: 'rgba(91, 168, 247, 0.6)',
+						borderColor: 'rgba(91, 168, 247, 1)',
+						borderWidth: 1
+					}]
+				},
+				options: chartOptions
+			});
+		}).fail(function(xhr) {
+			console.error('Error fetching rating distributions:', xhr);
+		});
+	</script>
+</body>
+</html>

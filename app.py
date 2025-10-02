@@ -182,6 +182,9 @@ def get_new_problem_anonymous():
     problem.set_solutions(mysql)
     problem.game_moves = GameMove.get_by_game(mysql, problem.game_id)
 
+    mysql.query("SELECT datetime, u.name, u.rating, comment FROM problem_comment pc JOIN user u ON u.id = pc.user_id WHERE problem_id = %s ORDER BY datetime DESC", (problem.id))
+    comments = mysql.cursor.fetchall()
+
     mysql.commit_and_close()
 
     return {
@@ -197,6 +200,12 @@ def get_new_problem_anonymous():
             "move_number": gm.move_number,
             "move": gm.move
         } for gm in problem.game_moves],
+        "comments": [{
+            "time": row[0],
+            "username": row[1],
+            "user_rating": row[2],
+            "comment": row[3]
+        } for row in comments],
         "solutions": [{
             "move": row[0],
             "winrate": row[1],
@@ -261,6 +270,9 @@ def make_attempt(current_user):
         problem.rating
     ))
 
+    mysql.query("SELECT datetime, u.name, u.rating, comment FROM problem_comment pc JOIN user u ON u.id = pc.user_id WHERE problem_id = %s ORDER BY datetime DESC", (problem.id))
+    comments = mysql.cursor.fetchall()
+
     mysql.commit_and_close()
 
     return {
@@ -275,6 +287,12 @@ def make_attempt(current_user):
         "total_attempts": total_attempts + 1,  # +1 because we just added this attempt
         "user_rating": user_rating,
         "my_rating": my_rating,
+        "comments": [{
+            "time": row[0],
+            "username": row[1],
+            "user_rating": row[2],
+            "comment": row[3]
+        } for row in comments],
         "solutions": [{
             "move": row[0],
             "winrate": row[1],
@@ -355,6 +373,9 @@ def get_problem_by_id(current_user, id):
     problem.set_solutions(mysql)
     problem.game_moves = GameMove.get_by_game(mysql, problem.game_id)
 
+    mysql.query("SELECT datetime, u.name, u.rating, comment FROM problem_comment pc JOIN user u ON u.id = pc.user_id WHERE problem_id = %s ORDER BY datetime DESC", (problem.id))    
+    comments = mysql.cursor.fetchall()
+    
     mysql.commit_and_close()
 
     return {
@@ -371,6 +392,12 @@ def get_problem_by_id(current_user, id):
             "move_number": gm.move_number,
             "move": gm.move
         } for gm in problem.game_moves],
+        "comments": [{
+            "time": row[0],
+            "username": row[1],
+            "user_rating": row[2],
+            "comment": row[3]
+        } for row in comments],
         "solutions": [{
             "move": row[0],
             "winrate": row[1],
@@ -510,9 +537,57 @@ def add_comment(current_user):
     mysql = MySQL().connect(mysql_ip, mysql_db)
     body = request.json
 
-    comment = body["rating"]
+    comment = body["comment"]
     problem_id = body["problem_id"]
+
+    if len(comment) > 2000:
+        return Response("", 400)
 
     mysql.query("INSERT INTO problem_comment (user_id, problem_id, comment) values (%s, %s, %s)", (current_user.id, problem_id, comment))
     mysql.commit_and_close()
     return Response("", 200)
+
+
+@app.route("/backend/rating_distributions", methods=["GET"])
+@token_required
+def get_rating_distributions(current_user):
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+
+    mysql.query("SELECT rating FROM user WHERE kfactor < 80")
+    user_ratings = mysql.cursor.fetchall()
+
+    mysql.query("SELECT rating FROM problem")
+    problem_ratings = mysql.cursor.fetchall()
+
+    user_buckets = []
+    for i in range(5, 29):
+        user_buckets.append({
+            "bucket": str(i * 100) + " - " + str((i + 1) * 100),
+            "count": len([r for r in user_ratings if r[0] >= i * 100 and r[0] < (i + 1) * 100])
+        })
+
+    problem_buckets = []
+    for i in range(5, 29):
+        problem_buckets.append({
+            "bucket": str(i * 100) + " - " + str((i + 1) * 100),
+            "count": len([r for r in problem_ratings if r[0] >= i * 100 and r[0] < (i + 1) * 100])
+        })
+
+    mysql.commit_and_close()
+
+    return {
+        "users": user_buckets,
+        "problems": problem_buckets
+    }
+
+
+@app.route("/backend/attempt_count", methods=["GET"])
+@token_required
+def get_attempt_count(current_user):
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+
+    mysql.query("SELECT count(*) FROM problem_attempt")
+    result = mysql.cursor.fetchone()[0]
+    mysql.commit_and_close()
+
+    return str(result)

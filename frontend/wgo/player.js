@@ -376,7 +376,8 @@ Player.prototype = {
 				problem_game_date: new Date(problem.game_date).toDateString(),
 				"Total attempts": problem.total_attempts || 0,
 				"Average user rating": player.formatStarRating(problem.user_rating),
-				my_rating: problem.my_rating || null
+				my_rating: problem.my_rating || null,
+				comments: problem.comments || []
 			};
 
 			player.new_problem = problem;
@@ -488,9 +489,10 @@ Player.prototype = {
 				problem_id: problem.id,
 				problem_rating: Math.round(problem.rating),
 				problem_from_game: problem.game_title,
-				problem_game_date: new Date(problem.game_date).toDateString(),		
+				problem_game_date: new Date(problem.game_date).toDateString(),
 				"Total attempts": problem.total_attempts || 0,
 				"Average user rating": player.formatStarRating(problem.user_rating),
+				comments: problem.comments || []
 			};
 
 			player.new_problem = problem;

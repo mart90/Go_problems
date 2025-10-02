@@ -9,19 +9,59 @@ var prepare_dom = function() {
 		'<h3 id="currentRating" class="wgo-right-rating"></h3>' +
 		'<h3 id="ratingChange" class="wgo-right-ratingChange"></h3>';
 	this.element.appendChild(this.top);
-	
+
+	// Create tabs container
+	this.tabs = document.createElement("div");
+	this.tabs.className = "wgo-tabs";
+	this.element.appendChild(this.tabs);
+
+	this.infoTab = document.createElement("div");
+	this.infoTab.className = "wgo-tab wgo-tab-active";
+	this.infoTab.textContent = "Info";
+	this.tabs.appendChild(this.infoTab);
+
+	this.commentsTab = document.createElement("div");
+	this.commentsTab.className = "wgo-tab";
+	this.commentsTab.innerHTML = "Comments";
+	this.tabs.appendChild(this.commentsTab);
+
 	this.comments = document.createElement("div");
 	this.comments.className = "wgo-comments-content";
 	this.element.appendChild(this.comments);
-	
+
 	this.notification = document.createElement("div");
 	this.notification.className = "wgo-notification";
 	this.notification.style.display = "none";
 	this.comments.appendChild(this.notification);
-	
+
 	this.comment_text = document.createElement("div");
-	this.comment_text.className = "wgo-comment-text"; 
+	this.comment_text.className = "wgo-comment-text";
 	this.comments.appendChild(this.comment_text);
+
+	// Create comments section (hidden by default)
+	this.commentsSection = document.createElement("div");
+	this.commentsSection.className = "wgo-comments-section";
+	this.commentsSection.style.display = "none";
+	this.element.appendChild(this.commentsSection);
+
+	this.commentsListContainer = document.createElement("div");
+	this.commentsListContainer.className = "wgo-comments-list";
+	this.commentsSection.appendChild(this.commentsListContainer);
+
+	// Tab click handlers
+	this.infoTab.onclick = function() {
+		this.infoTab.className = "wgo-tab wgo-tab-active";
+		this.commentsTab.className = "wgo-tab";
+		this.comments.style.display = "block";
+		this.commentsSection.style.display = "none";
+	}.bind(this);
+
+	this.commentsTab.onclick = function() {
+		this.commentsTab.className = "wgo-tab wgo-tab-active";
+		this.infoTab.className = "wgo-tab";
+		this.comments.style.display = "none";
+		this.commentsSection.style.display = "block";
+	}.bind(this);
 }
 
 var mark = function(move) {
@@ -58,7 +98,7 @@ var format_info = function(info, title) {
 	if(title) ret += '<div class="wgo-info-title">'+WGo.t("Info")+'</div>';
 	for(var key in info) {
 		// Skip internal properties used for rating functionality
-       	if(key === 'my_rating' || key === "problem_id") continue;
+       	if(key === 'my_rating' || key === "problem_id" || key === "comments") continue;
 
        	// Make problem_id clickable
        	if(key === 'Problem id') {
@@ -102,11 +142,11 @@ var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(p
 	player.addEventListener("solutionLoaded", function(e) {
 		if(e.kifu.hasComments()) {
 			this.element.className = "wgo-commentbox";
-			
+
 			this._update = function(e) {
 				this.setComments(e);
 			}.bind(this);
-			
+
 			player.addEventListener("update", this._update);
 		}
 		else {
@@ -126,10 +166,13 @@ var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(p
 				gameInfo["Average user rating"] = e.kifu.info["Average user rating"];
 				// Keep internal data for rating functionality
 				gameInfo.my_rating = e.kifu.info.my_rating;
+				gameInfo.comments = e.kifu.info.comments || [];
 			}
 
 			this.comment_text.innerHTML = format_info(gameInfo);
 			this.setupStarRating(gameInfo);
+			this.displayComments(gameInfo.comments || [], gameInfo.problem_id);
+			this.updateCommentsTabTitle(gameInfo.comments ? gameInfo.comments.length : 0);
 		}
 	}.bind(this));
 
@@ -277,6 +320,125 @@ CommentBox.prototype.setupStarRating = function(gameInfo) {
 			});
 		});
 	});
+};
+
+CommentBox.prototype.updateCommentsTabTitle = function(count) {
+	if(count > 0) {
+		this.commentsTab.innerHTML = 'Comments (' + count + ')';
+	} else {
+		this.commentsTab.innerHTML = 'Comments';
+	}
+};
+
+CommentBox.prototype.displayComments = function(comments, problemId) {
+	var token = localStorage.getItem('token');
+	var self = this;
+	var player = this.player;
+
+	// Clear existing content
+	this.commentsListContainer.innerHTML = '';
+
+	// Display existing comments
+	if(comments && comments.length > 0) {
+		// Sort comments by datetime descending (newest first)
+		var sortedComments = comments.slice().sort(function(a, b) {
+			return new Date(b.time) - new Date(a.time);
+		});
+
+		sortedComments.forEach(function(comment) {
+			var commentDiv = document.createElement('div');
+			commentDiv.className = 'wgo-comment-item';
+
+			var commentHeader = document.createElement('div');
+			commentHeader.className = 'wgo-comment-header';
+			var date = new Date(comment.time);
+			var rating = comment.user_rating ? ' (' + Math.round(comment.user_rating) + ')' : '';
+			commentHeader.innerHTML = '<strong>' + WGo.filterHTML(comment.username) + rating + '</strong> - ' +
+				date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+			commentDiv.appendChild(commentHeader);
+
+			var commentBody = document.createElement('div');
+			commentBody.className = 'wgo-comment-body';
+			commentBody.textContent = comment.comment;
+			commentDiv.appendChild(commentBody);
+
+			self.commentsListContainer.appendChild(commentDiv);
+		});
+	} else {
+		var noComments = document.createElement('div');
+		noComments.className = 'wgo-no-comments';
+		noComments.textContent = 'No comments yet. Be the first to comment!';
+		this.commentsListContainer.appendChild(noComments);
+	}
+
+	// Add comment form if user is logged in
+	if(token && token !== "undefined" && problemId) {
+		var commentForm = document.createElement('div');
+		commentForm.className = 'wgo-comment-form';
+
+		var textarea = document.createElement('textarea');
+		textarea.className = 'wgo-comment-textarea';
+		textarea.placeholder = 'Add a comment...';
+		textarea.rows = 3;
+		commentForm.appendChild(textarea);
+
+		var submitButton = document.createElement('button');
+		submitButton.className = 'wgo-comment-submit';
+		submitButton.textContent = 'Post Comment';
+		commentForm.appendChild(submitButton);
+
+		submitButton.onclick = function() {
+			var commentText = textarea.value.trim();
+			if(!commentText) {
+				player.notification("Comment cannot be empty");
+				setTimeout(function() {
+					player.notification();
+				}, 2000);
+				return;
+			}
+
+			$.ajax({
+				type: "POST",
+				url: server_address + "backend/add_comment",
+				headers: {
+					'Authorization': 'Bearer ' + token,
+					'Content-Type': 'application/json'
+				},
+				data: JSON.stringify({
+					problem_id: problemId,
+					comment: commentText
+				})
+			}).done(function() {
+				player.notification("Comment posted successfully!");
+				setTimeout(function() {
+					player.notification();
+				}, 2000);
+
+				// Add the new comment to the display
+				var newComment = {
+					time: new Date().toISOString(),
+					username: localStorage.getItem('username') || 'You',
+					comment: commentText
+				};
+
+				// Re-render comments with the new one
+				var updatedComments = comments.concat([newComment]);
+				self.displayComments(updatedComments, problemId);
+				self.updateCommentsTabTitle(updatedComments.length);
+
+				// Clear textarea
+				textarea.value = '';
+			}).fail(function(xhr) {
+				console.error('Failed to post comment:', xhr);
+				player.notification("Failed to post comment. Please try again.");
+				setTimeout(function() {
+					player.notification();
+				}, 3000);
+			});
+		};
+
+		this.commentsListContainer.appendChild(commentForm);
+	}
 };
 
 /**
