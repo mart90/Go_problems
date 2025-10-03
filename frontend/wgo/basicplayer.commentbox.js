@@ -380,6 +380,15 @@ CommentBox.prototype.displayComments = function(comments, problemId) {
 		textarea.className = 'wgo-comment-textarea';
 		textarea.placeholder = 'Add a comment...';
 		textarea.rows = 3;
+
+		// Prevent focus issues on mobile
+		textarea.addEventListener('touchstart', function(e) {
+			e.stopPropagation();
+		});
+		textarea.addEventListener('focus', function(e) {
+			e.stopPropagation();
+		});
+
 		commentForm.appendChild(textarea);
 
 		var submitButton = document.createElement('button');

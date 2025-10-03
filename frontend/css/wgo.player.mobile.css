@@ -290,7 +290,7 @@ a.wgo-move-link {
 }
 
 .wgo-tab {
-	padding: 10px 15px;
+	padding: 12px 15px;
 	cursor: pointer;
 	background-color: rgba(255,255,255,0.05);
 	border: none;
@@ -298,7 +298,8 @@ a.wgo-move-link {
 	transition: all 0.3s;
 	flex: 1;
 	text-align: center;
-	font-size: 0.9em;
+	font-size: 16px;
+	font-weight: 500;
 }
 
 .wgo-tab:hover {
@@ -370,7 +371,10 @@ a.wgo-move-link {
 	font-family: inherit;
 	resize: vertical;
 	box-sizing: border-box;
-	font-size: 0.9em;
+	font-size: 16px;
+	-webkit-user-select: text;
+	user-select: text;
+	touch-action: manipulation;
 }
 
 .wgo-comment-textarea:focus {
@@ -396,6 +400,12 @@ a.wgo-move-link {
 }
 
 /*--- /Comments box ----------------------------------------------------------------------*/
+
+/* Star rating - larger on mobile */
+.wgo-star {
+	font-size: 28px !important;
+	margin-right: 5px !important;
+}
 
 /*--- Control box ------------------------------------------------------------------------*/
 

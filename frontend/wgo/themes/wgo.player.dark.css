@@ -76,6 +76,24 @@ a.wgo-problem-link:hover {
 	user-select: none;
 }
 
+@media (max-width: 999px) {
+	.wgo-rating-section {
+		padding-top: 15px !important;
+		margin-top: 15px !important;
+	}
+
+	.wgo-star-rating {
+		margin-top: 10px !important;
+	}
+
+	.wgo-star {
+		font-size: 40px !important;
+		margin-right: 8px !important;
+		padding: 5px !important;
+		line-height: 1.2 !important;
+	}
+}
+
 .wgo-star:hover {
 	color: #FFD700 !important;
 }
