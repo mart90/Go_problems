@@ -98,6 +98,26 @@ a.wgo-problem-link:hover {
 	color: #FFD700 !important;
 }
 
+/* Rating history chart */
+.wgo-rating-history-section {
+	padding: 20px 15px 15px 15px;
+	margin-top: 20px;
+	border-top: 2px solid rgba(56, 56, 56, 0.3);
+}
+
+.wgo-rating-history-chart-container {
+	height: 200px;
+	padding: 10px;
+	background-color: rgba(255,255,255,0.02);
+	border-radius: 5px;
+}
+
+@media (max-width: 999px) {
+	.wgo-rating-history-chart-container {
+		height: 180px;
+	}
+}
+
 /* game info table */
 
 .wgo-commentbox .wgo-info-list {

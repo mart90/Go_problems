@@ -98,14 +98,14 @@ var format_info = function(info, title) {
 	if(title) ret += '<div class="wgo-info-title">'+WGo.t("Info")+'</div>';
 	for(var key in info) {
 		// Skip internal properties used for rating functionality
-       	if(key === 'my_rating' || key === "problem_id" || key === "comments") continue;
+       	if(key === 'my_rating' || key === "problem_id" || key === "comments" || key === "rating_history") continue;
 
        	// Make problem_id clickable
        	if(key === 'Problem id') {
        		ret += '<div class="wgo-info-item"><span class="wgo-info-label">'+key+'</span><span class="wgo-info-value"><a href="/problems/'+info[key]+'" class="wgo-problem-link">'+info[key]+'</a></span></div>';
        	} else {
        		ret += '<div class="wgo-info-item"><span class="wgo-info-label">'+key+'</span><span class="wgo-info-value">'+info[key]+'</span></div>';
-       	}	
+       	}
 	}
 
 	// Add rating section if we have a problem_id AND user is logged in
@@ -124,6 +124,16 @@ var format_info = function(info, title) {
 	}
 
 	ret += '</div>';
+
+	// Add rating history chart at the bottom if available
+	if(info.rating_history && info.rating_history.length > 0 && token && token != "undefined") {
+		ret += '<div class="wgo-rating-history-section">';
+		ret += '<div class="wgo-rating-history-chart-container">';
+		ret += '<canvas id="wgo-rating-history-chart"></canvas>';
+		ret += '</div>';
+		ret += '</div>';
+	}
+
 	return ret;
 }
 
@@ -171,6 +181,7 @@ var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(p
 
 			this.comment_text.innerHTML = format_info(gameInfo);
 			this.setupStarRating(gameInfo);
+			this.renderRatingHistoryChart(gameInfo.rating_history);
 			this.displayComments(gameInfo.comments || [], gameInfo.problem_id);
 			this.updateCommentsTabTitle(gameInfo.comments ? gameInfo.comments.length : 0);
 		}
@@ -448,6 +459,104 @@ CommentBox.prototype.displayComments = function(comments, problemId) {
 
 		this.commentsListContainer.appendChild(commentForm);
 	}
+};
+
+CommentBox.prototype.renderRatingHistoryChart = function(ratingHistory) {
+	if(!ratingHistory || ratingHistory.length === 0) return;
+
+	// Wait longer to ensure canvas is in DOM and Chart.js is loaded
+	setTimeout(function() {
+		var canvas = document.getElementById('wgo-rating-history-chart');
+		if(!canvas) return;
+
+		// Check if Chart is available
+		if(typeof Chart === 'undefined') {
+			console.error('Chart.js is not loaded');
+			return;
+		}
+
+		var ctx = canvas.getContext('2d');
+
+		// Destroy existing chart if it exists
+		if(this.ratingChart) {
+			this.ratingChart.destroy();
+		}
+
+		// Create labels (attempt numbers)
+		var labels = ratingHistory.map(function(_, index) {
+			return index + 1;
+		});
+
+		this.ratingChart = new Chart(ctx, {
+			type: 'line',
+			data: {
+				labels: labels,
+				datasets: [{
+					label: 'Problem Rating',
+					data: ratingHistory,
+					borderColor: 'rgba(91, 168, 247, 1)',
+					backgroundColor: 'rgba(91, 168, 247, 0.1)',
+					borderWidth: 2,
+					pointRadius: 3,
+					pointHoverRadius: 5,
+					tension: 0.1,
+					fill: true
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: {
+						display: false
+					},
+					tooltip: {
+						callbacks: {
+							title: function(context) {
+								return 'Attempt #' + context[0].label;
+							},
+							label: function(context) {
+								return 'Rating: ' + Math.round(context.parsed.y);
+							}
+						}
+					}
+				},
+				scales: {
+					y: {
+						beginAtZero: false,
+						ticks: {
+							color: 'rgba(255,255,255,0.7)',
+							callback: function(value) {
+								return Math.round(value);
+							}
+						},
+						grid: {
+							color: 'rgba(255,255,255,0.1)'
+						},
+						title: {
+							display: true,
+							text: 'Rating History',
+							color: 'rgba(255,255,255,0.7)'
+						}
+					},
+					x: {
+						ticks: {
+							color: 'rgba(255,255,255,0.7)',
+							maxTicksLimit: 10
+						},
+						grid: {
+							color: 'rgba(255,255,255,0.1)'
+						},
+						title: {
+							display: true,
+							text: 'Attempt number (rated)',
+							color: 'rgba(255,255,255,0.7)'
+						}
+					}
+				}
+			}
+		});
+	}.bind(this), 0);
 };
 
 /**

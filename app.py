@@ -595,3 +595,15 @@ def get_attempt_count(current_user):
     mysql.commit_and_close()
 
     return str(result)
+
+
+@app.route("/backend/problems/<id>/rating_history", methods=["GET"])
+@token_required
+def get_problem_rating_history(current_user, id):
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+
+    mysql.query("SELECT problem_new_rating FROM problem_attempt WHERE problem_id = %s AND problem_new_rating IS NOT NULL ORDER BY date_attempted", (id))
+    result = mysql.cursor.fetchall()
+    mysql.commit_and_close()
+
+    return [row[0] for row in result]

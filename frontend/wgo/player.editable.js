@@ -118,10 +118,27 @@ var make_attempt = function (player, x, y) {
 			comments: result.comments || []
 		};
 
-		player.dispatchEvent({
-			type: "solutionLoaded",
-			target: player,
-			kifu: player.kifu,
+		// Fetch rating history
+		$.ajax({
+			type: "GET",
+			url: server_address + "backend/problems/" + result.problem_id + "/rating_history",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+			}
+		}).done(function(ratingHistory) {
+			player.kifu.info.rating_history = ratingHistory;
+			player.dispatchEvent({
+				type: "solutionLoaded",
+				target: player,
+				kifu: player.kifu,
+			});
+		}).fail(function() {
+			// If rating history fails, still dispatch the event
+			player.dispatchEvent({
+				type: "solutionLoaded",
+				target: player,
+				kifu: player.kifu,
+			});
 		});
 
 		player.board.redraw();

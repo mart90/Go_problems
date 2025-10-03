@@ -9,7 +9,7 @@
 		if (!token || token == "undefined") {
 			window.location.href = server_address + "login.html";
 		}
-		
+
 		var expires_at = new Date(localStorage.getItem('token_expires_at'));
 		var current_date = new Date();
 		if (current_date > expires_at){
@@ -25,6 +25,7 @@
 	<script src="wgo/basicplayer.commentbox.js"></script>
 	<script src="wgo/player.editable.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 	<link rel="stylesheet" media="(min-width:1000px)" href="css/wgo.player.css" />
 	<link rel="stylesheet" media="(max-width:999px)" href="css/wgo.player.mobile.css" />

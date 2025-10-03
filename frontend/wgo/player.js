@@ -382,15 +382,36 @@ Player.prototype = {
 
 			player.new_problem = problem;
 
-			player.dispatchEvent({
-				type: "problemLoaded",
-				target: player,
-				kifu: player.kifu,
-			});
+			// Fetch rating history for unranked problem viewing
+			$.ajax({
+				type: "GET",
+				url: server_address + "backend/problems/" + problem.id + "/rating_history",
+				beforeSend: function (xhr) {
+					xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+				}
+			}).done(function(ratingHistory) {
+				problem.kifu.info.rating_history = ratingHistory;
+				player.dispatchEvent({
+					type: "problemLoaded",
+					target: player,
+					kifu: player.kifu,
+				});
 
-			if (callback) {
-				callback.call(player);
-			}
+				if (callback) {
+					callback.call(player);
+				}
+			}).fail(function() {
+				// If rating history fails, still dispatch the event
+				player.dispatchEvent({
+					type: "problemLoaded",
+					target: player,
+					kifu: player.kifu,
+				});
+
+				if (callback) {
+					callback.call(player);
+				}
+			});
 		});
 	},
 
