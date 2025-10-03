@@ -166,8 +166,7 @@ def get_new_problem_anonymous():
             p.move_number,
             g.title as game_title,
             g.date_played as game_date_played,
-            p.user_rating,            
-            (select count(*) from problem_attempt pa where pa.problem_id = p.id) as total_attempts
+            p.user_rating
         from problem p
         join game g on g.id = p.game_id""")
 
@@ -186,8 +185,14 @@ def get_new_problem_anonymous():
     problem.set_solutions(mysql)
     problem.game_moves = GameMove.get_by_game(mysql, problem.game_id)
 
-    mysql.query("SELECT datetime, u.name, u.rating, comment FROM problem_comment pc JOIN user u ON u.id = pc.user_id WHERE problem_id = %s ORDER BY datetime DESC", (problem.id))
+    mysql.query("SELECT datetime, u.name, u.rating, comment FROM problem_comment pc JOIN user u ON u.id = pc.user_id WHERE problem_id = %s", (problem.id))
     comments = mysql.cursor.fetchall()
+
+    mysql.query("select count(*) from problem_attempt where problem_id = %s", (problem.id))
+    count = mysql.cursor.fetchone()[0]
+
+    problem_row = [row for row in result if row[0] == problem.id][0]
+    user_rating = problem_row[6]
 
     mysql.commit_and_close()
 
@@ -197,9 +202,9 @@ def get_new_problem_anonymous():
         "rating": problem.rating,
         "game_id": problem.game_id,
         "game_title": problem.game_title,
-        "game_date": problem.game_date,        
-        "total_attempts": [row[7] for row in result if row[0] == problem.id][0],
-        "user_rating": [row[6] for row in result if row[0] == problem.id][0],
+        "game_date": problem.game_date,
+        "total_attempts": count,
+        "user_rating": user_rating,
         "game_moves": [{
             "move_number": gm.move_number,
             "move": gm.move
