@@ -396,12 +396,46 @@ CommentBox.prototype.displayComments = function(comments, problemId) {
 		textarea.addEventListener('touchstart', function(e) {
 			e.stopPropagation();
 		});
+
+		var scrollContainer = null;
+
 		textarea.addEventListener('focus', function(e) {
 			e.stopPropagation();
-			// Scroll textarea into view on mobile, with delay to allow keyboard to open
-			setTimeout(function() {
-				textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-			}, 300);
+
+			// Find the scrollable parent container
+			if(!scrollContainer) {
+				scrollContainer = self.comments;
+				while(scrollContainer && scrollContainer !== document.body) {
+					var overflow = window.getComputedStyle(scrollContainer).overflowY;
+					if(overflow === 'auto' || overflow === 'scroll') {
+						break;
+					}
+					scrollContainer = scrollContainer.parentElement;
+				}
+			}
+
+			// Add padding to bottom of scroll container to account for keyboard
+			if(scrollContainer) {
+				scrollContainer.style.paddingBottom = '400px';
+
+				// Scroll textarea into view after keyboard opens
+				setTimeout(function() {
+					var rect = textarea.getBoundingClientRect();
+					var containerRect = scrollContainer.getBoundingClientRect();
+
+					// If textarea is below the middle of the viewport, scroll it into view
+					if(rect.top > window.innerHeight / 2) {
+						scrollContainer.scrollTop += rect.top - containerRect.top - 100;
+					}
+				}, 300);
+			}
+		});
+
+		textarea.addEventListener('blur', function() {
+			// Remove padding when keyboard closes
+			if(scrollContainer) {
+				scrollContainer.style.paddingBottom = '';
+			}
 		});
 
 		commentForm.appendChild(textarea);
