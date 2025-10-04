@@ -249,10 +249,19 @@ Player.prototype = {
 	},
 
 	initGame: function() {
+		if (this.config.problemId) {
+			// We're loading a specific problem
+			this.unranked = true;
+			this.loadProblem(this.config.problemId, this.activateNewProblem);
+		}
+
 		var token = localStorage.getItem('token');
 		if (!token || token == "undefined") {
 			this.anonymous = true;
-			this.loadNewProblemAnonymous(this.activateNewProblem);
+			
+			if (!this.config.problemId) {
+				this.loadNewProblemAnonymous(this.activateNewProblem);
+			}
 
 			this.anon_rating = localStorage.getItem("anon_rating");
 			this.anon_kfactor = localStorage.getItem("anon_kfactor");
@@ -279,12 +288,7 @@ Player.prototype = {
 				document.getElementById("currentRating").innerHTML = Math.round(result);
 			});
 
-			if (this.config.problemId) {
-				// We're loading a specific problem
-				this.unranked = true;
-				this.loadProblem(this.config.problemId, this.activateNewProblem);
-			}
-			else {
+			if (!this.config.problemId) {
 				this.loadNewProblem(this.activateNewProblem);
 			}
 		}
@@ -376,32 +380,43 @@ Player.prototype = {
 				problem_game_date: new Date(problem.game_date).toDateString(),
 				"Total attempts": problem.total_attempts || 0,
 				"Average user rating": player.formatStarRating(problem.user_rating),
-				my_rating: problem.my_rating || null,
+				my_rating: null,
 				comments: problem.comments || []
 			};
 
 			player.new_problem = problem;
 
+			var token = localStorage.getItem('token');
+			var isLoggedIn = token && token != "undefined";
+
+			// Fetch user's rating if logged in
+			var myRatingPromise = isLoggedIn ? $.ajax({
+				type: "GET",
+				url: server_address + "backend/problems/" + problem.id + "/my_rating",
+				beforeSend: function (xhr) {
+					xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+				}
+			}).then(function(myRating) {
+				problem.kifu.info.my_rating = parseInt(myRating) || null;
+			}).fail(function() {
+				// If fetching my_rating fails, keep it null
+			}) : $.Deferred().resolve();
+
 			// Fetch rating history for unranked problem viewing
-			$.ajax({
+			var ratingHistoryPromise = isLoggedIn ? $.ajax({
 				type: "GET",
 				url: server_address + "backend/problems/" + problem.id + "/rating_history",
 				beforeSend: function (xhr) {
-					xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+					xhr.setRequestHeader('Authorization', 'Bearer ' + token);
 				}
-			}).done(function(ratingHistory) {
+			}).then(function(ratingHistory) {
 				problem.kifu.info.rating_history = ratingHistory;
-				player.dispatchEvent({
-					type: "problemLoaded",
-					target: player,
-					kifu: player.kifu,
-				});
-
-				if (callback) {
-					callback.call(player);
-				}
 			}).fail(function() {
-				// If rating history fails, still dispatch the event
+				// If rating history fails, continue without it
+			}) : $.Deferred().resolve();
+
+			// Wait for both requests to complete (or skip if not logged in)
+			$.when(myRatingPromise, ratingHistoryPromise).always(function() {
 				player.dispatchEvent({
 					type: "problemLoaded",
 					target: player,

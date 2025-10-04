@@ -353,8 +353,7 @@ def get_problem_view(id):
 
 
 @app.route("/backend/problems/<id>", methods=["GET"])
-@token_required
-def get_problem_by_id(current_user, id):
+def get_problem_by_id(id):
     mysql = MySQL().connect(mysql_ip, mysql_db)
 
     mysql.query("""
@@ -365,11 +364,10 @@ def get_problem_by_id(current_user, id):
             g.date_played as game_date_played,
             (select count(*) from problem_attempt pa where pa.problem_id = p.id) as attempts,
             p.move_number,
-            p.user_rating,
-            (select rating from problem_rating pr where pr.problem_id = p.id and pr.user_id = %s) as my_rating
+            p.user_rating
         from problem p
         join game g on g.id = p.game_id
-        where p.id = %s""", (current_user.id, id))
+        where p.id = %s""", (id))
     
     result = mysql.cursor.fetchone()
 
@@ -378,7 +376,6 @@ def get_problem_by_id(current_user, id):
 
     problem = Problem(id, result[1], result[0], None, result[5], result[4], result[2], result[3])
     user_rating = result[6]
-    my_rating = result[7]
     problem.set_solutions(mysql)
     problem.game_moves = GameMove.get_by_game(mysql, problem.game_id)
 
@@ -393,7 +390,7 @@ def get_problem_by_id(current_user, id):
         "rating": problem.rating,
         "total_attempts": problem.attempts,
         "user_rating": user_rating,
-        "my_rating": my_rating,
+        "my_rating": None,
         "game_id": problem.game_id,
         "game_title": problem.game_title,
         "game_date": problem.game_date,
@@ -497,6 +494,20 @@ def get_problems(current_user):
             "attempts": row[4]
         }
         for row in results]
+
+
+@app.route("/backend/problems/<id>/my_rating", methods=["GET"])
+@token_required
+def get_my_rating(current_user, id):
+    mysql = MySQL().connect(mysql_ip, mysql_db)
+
+    mysql.query("select rating from problem_rating where user_id = %s and problem_id = %s", (current_user.id, id))
+    
+    result = mysql.cursor.fetchone()
+
+    mysql.commit_and_close()
+
+    return str(result[0])
 
 
 @app.route("/backend/problem_count", methods=["GET"])
