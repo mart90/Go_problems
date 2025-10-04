@@ -317,11 +317,25 @@ WGo.Player.Editable.prototype.play = function(x,y) {
 
 	var valid = player.kifuReader.game.isValid(x, y);
 
+	if (player.analysis_mode && valid) {
+		this.player.kifuReader.node.appendChild(new WGo.KNode({
+			move: {
+				x: x, 
+				y: y, 
+				c: this.player.kifuReader.game.turn
+			}, 
+			_edited: true
+		}));
+		this.player.next(this.player.kifuReader.node.children.length-1);
+		return;
+	}
+
 	if (player.frozen || player.ignore_attempts || !valid) {
 		return;
 	}
 
 	player.ignore_attempts = true;
+	player.analysis_mode = true;
 
 	if (player.unranked) {
 		make_attempt_unranked(player, x, y);
