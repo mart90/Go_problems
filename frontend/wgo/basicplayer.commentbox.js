@@ -378,7 +378,7 @@ CommentBox.prototype.displayComments = function(comments, problemId) {
 	} else {
 		var noComments = document.createElement('div');
 		noComments.className = 'wgo-no-comments';
-		noComments.textContent = 'No comments yet. Be the first to comment!';
+		noComments.textContent = 'No comments yet. Add a comment to help others understand the solution';
 		this.commentsListContainer.appendChild(noComments);
 	}
 
@@ -398,6 +398,10 @@ CommentBox.prototype.displayComments = function(comments, problemId) {
 		});
 		textarea.addEventListener('focus', function(e) {
 			e.stopPropagation();
+			// Scroll textarea into view on mobile, with delay to allow keyboard to open
+			setTimeout(function() {
+				textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}, 300);
 		});
 
 		commentForm.appendChild(textarea);
@@ -535,7 +539,7 @@ CommentBox.prototype.renderRatingHistoryChart = function(ratingHistory) {
 						},
 						title: {
 							display: true,
-							text: 'Rating History',
+							text: 'Rating',
 							color: 'rgba(255,255,255,0.7)'
 						}
 					},

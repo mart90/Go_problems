@@ -209,6 +209,8 @@ a.wgo-move-link {
 
 .wgo-player-right .wgo-comments-content, .wgo-player-left .wgo-comments-content {
 	position: relative;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 .wgo-player-right .wgo-commentbox, .wgo-player-left .wgo-commentbox {
@@ -318,6 +320,8 @@ a.wgo-move-link {
 	padding: 10px;
 	overflow-y: auto;
 	max-height: 300px;
+	-webkit-overflow-scrolling: touch;
+	position: relative;
 }
 
 .wgo-comments-list {
