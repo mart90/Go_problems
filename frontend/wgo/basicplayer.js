@@ -170,9 +170,14 @@ var BasicPlayer = WGo.extendClass(WGo.Player, function(elem, config) {
 	
 	window.addEventListener("resize", function() {
 		if(!this.noresize) {
+			// Don't update dimensions if user is typing in a text field (mobile keyboard opening/closing)
+			var activeElement = document.activeElement;
+			if(activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
+				return;
+			}
 			this.updateDimensions();
 		}
-		
+
 	}.bind(this));
 	
 	this.updateDimensions();
