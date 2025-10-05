@@ -25,7 +25,7 @@ var edit_board_mouse_move = function(x,y) {
 	}
 }
 
-// board mouseout callback for edit move	
+// board mouseout callback for edit move
 var edit_board_mouse_out = function() {
 	if(this._last_mark) {
 		this.board.removeObject(this._last_mark);
@@ -304,7 +304,12 @@ WGo.Player.Editable.prototype.set = function(problem, token) {
 	this._ev_click = this._ev_click || this.play.bind(this);
 	this._ev_move = this._ev_move || edit_board_mouse_move.bind(this);
 	this._ev_out = this._ev_out || edit_board_mouse_out.bind(this);
-	
+
+	// Remove listeners first to prevent duplicate registrations
+	this.board.removeEventListener("click", this._ev_click);
+	this.board.removeEventListener("mousemove", this._ev_move);
+	this.board.removeEventListener("mouseout", this._ev_out);
+
 	this.board.addEventListener("click", this._ev_click);
 	this.board.addEventListener("mousemove", this._ev_move);
 	this.board.addEventListener("mouseout", this._ev_out);

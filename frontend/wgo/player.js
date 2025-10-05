@@ -175,7 +175,7 @@ var key_lis = function(e) {
 
 // function handling board clicks in normal mode
 var board_click_default = function(x,y) {
-	if(!this.kifuReader || !this.kifuReader.node || (this.problem.move_number == this.kifuReader.path.m) && !this.analysis_mode) return false;
+	if(!this.kifuReader || !this.kifuReader.node || (this.problem.move_number == this.kifuReader.path.m && !this.analysis_mode)) return false;
 	for(var i in this.kifuReader.node.children) {
 		if(this.kifuReader.node.children[i].move && this.kifuReader.node.children[i].move.x == x && this.kifuReader.node.children[i].move.y == y) {
 			this.next(i);
@@ -580,7 +580,10 @@ Player.prototype = {
 		player.analysis_mode = false;
 		player.disableNextButtons();
 
-		player._editable = new WGo.Player.Editable(player, player.board);
+		// Reuse existing editable instance or create new one
+		if (!player._editable) {
+			player._editable = new WGo.Player.Editable(player, player.board);
+		}
 		player._editable.set();
 	},
 
